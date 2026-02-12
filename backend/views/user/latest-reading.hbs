@@ -1,0 +1,161 @@
+<style>
+  * {
+    box-sizing: border-box;
+    font-family: "Segoe UI", sans-serif;
+  }
+
+  body {
+    background: #f4f6f8;
+    margin: 0;
+    padding: 30px;
+  }
+
+  .latest-page {
+    max-width: 900px;
+    margin: auto;
+  }
+
+  h1 {
+    margin-bottom: 20px;
+    color: #222;
+  }
+
+  .reading-card {
+    background: #fff;
+    border-radius: 16px;
+    padding: 24px;
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.08);
+  }
+
+  .header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 12px;
+    margin-bottom: 20px;
+  }
+
+  .header h2 {
+    margin: 0;
+    color: #0d6efd;
+  }
+
+  .user {
+    margin: 4px 0 0;
+    font-size: 0.85rem;
+    color: #777;
+  }
+
+  .time {
+    font-size: 0.85rem;
+    color: #555;
+  }
+
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px;
+  }
+
+  .box {
+    background: #f9fafb;
+    border-radius: 12px;
+    padding: 14px;
+  }
+
+  .box h4 {
+    margin: 0 0 8px;
+    font-size: 0.95rem;
+    color: #333;
+  }
+
+  .box p {
+    margin: 4px 0;
+    color: #555;
+  }
+
+  .box span {
+    font-weight: 600;
+    color: #000;
+  }
+
+  .footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 20px;
+    padding-top: 12px;
+    border-top: 1px dashed #ddd;
+    font-size: 0.85rem;
+    color: #777;
+  }
+
+  .link {
+    text-decoration: none;
+    color: #0d6efd;
+    font-weight: 500;
+  }
+
+  .back-btn {
+    display: inline-block;
+    margin-top: 25px;
+    text-decoration: none;
+    color: #0d6efd;
+    font-weight: 500;
+  }
+</style>
+
+<div class="latest-page">
+  <a href="/" class="back-btn">
+    ← Back to Home
+  </a>
+  <h1>📡 Latest Reading</h1>
+
+  <div class="reading-card">
+    <div class="header">
+      <div>
+        <h2>{{reading.device_id}}</h2>
+        <p class="user">User: {{reading.user_id}}</p>
+      </div>
+      <span class="time">{{reading.timestamp}}</span>
+    </div>
+
+    <div class="grid">
+      <div class="box">
+        <h4>⚡ Energy</h4>
+        <p>Daily: <span>{{reading.energy.daily_wh}} Wh</span></p>
+        <p>Delta: <span>{{reading.energy.delta_wh}} Wh</span></p>
+        <p>Monthly: <span>{{reading.energy.monthly_wh}} Wh</span></p>
+      </div>
+
+      <div class="box">
+        <h4>🔌 Power</h4>
+        <p>Real Power: <span>{{reading.power.real_w}} W</span></p>
+        <p>Power Factor: <span>{{reading.power.pf}}</span></p>
+      </div>
+
+      <div class="box">
+        <h4>📟 Raw</h4>
+        <p>Voltage: <span>{{reading.raw.voltage}} V</span></p>
+        <p>Current: <span>{{reading.raw.current}} A</span></p>
+      </div>
+
+      <div class="box">
+        <h4>⏱ Meta</h4>
+        <p>Sampling Rate: <span>{{reading.meta.sampling_ms}} ms</span></p>
+      </div>
+    </div>
+
+    <div class="footer">
+      <span>ID: {{reading.id}}</span>
+      <a href="/user/readings/{{reading.user_id}}" class="link">
+        View All Readings →
+      </a>
+    </div>
+  </div>
+
+  <a href="/user/dashboard/{{reading.user_id}}" class="back-btn">
+    ← Back to Dashboard
+  </a>
+</div>

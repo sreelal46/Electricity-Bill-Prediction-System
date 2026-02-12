@@ -1,0 +1,144 @@
+<style>
+  * {
+    box-sizing: border-box;
+    font-family: "Segoe UI", sans-serif;
+  }
+
+  body {
+    background: #f4f6f8;
+    margin: 0;
+    padding: 30px;
+  }
+
+  .readings-page {
+    max-width: 1200px;
+    margin: auto;
+  }
+
+  h1 {
+    margin-bottom: 20px;
+    color: #222;
+  }
+
+  .readings-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 20px;
+  }
+
+  .reading-card {
+    background: #fff;
+    border-radius: 14px;
+    padding: 20px;
+    box-shadow: 0 8px 22px rgba(0, 0, 0, 0.06);
+    transition: transform 0.2s ease;
+  }
+
+  .reading-card:hover {
+    transform: translateY(-4px);
+  }
+
+  .card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 10px;
+    margin-bottom: 12px;
+  }
+
+  .card-header h3 {
+    margin: 0;
+    color: #0d6efd;
+  }
+
+  .time {
+    font-size: 0.85rem;
+    color: #777;
+  }
+
+  .section {
+    margin-bottom: 12px;
+  }
+
+  .section h4 {
+    margin: 6px 0;
+    font-size: 0.95rem;
+    color: #333;
+  }
+
+  .section p {
+    margin: 4px 0;
+    color: #555;
+  }
+
+  .section span {
+    font-weight: 600;
+    color: #000;
+  }
+
+  .footer {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.8rem;
+    color: #777;
+    border-top: 1px dashed #eee;
+    padding-top: 8px;
+  }
+
+  .back-btn {
+    display: inline-block;
+    margin-top: 25px;
+    text-decoration: none;
+    color: #0d6efd;
+    font-weight: 500;
+  }
+</style>
+
+<div class="readings-page">
+  <a href="/" class="back-btn">
+    ← Back to Home
+  </a>
+  <h1>All Readings</h1>
+
+  <div class="readings-grid">
+    {{#each readings}}
+    <div class="reading-card">
+
+      <div class="card-header">
+        <h3>User: {{user_id}}</h3>
+        <span class="time">{{timestamp}}</span>
+      </div>
+
+      <div class="section">
+        <h4>⚡ Energy</h4>
+        <p>Daily Energy: <span>{{daily_energy_wh}} Wh</span></p>
+        <p>Daily Units: <span>{{daily_units}} kWh</span></p>
+        <p>Monthly Energy: <span>{{monthly_energy_wh}} Wh</span></p>
+        <p>Monthly Units: <span>{{monthly_units}} kWh</span></p>
+        <p>Total Energy: <span>{{total_energy_wh}} Wh</span></p>
+      </div>
+
+      <div class="section">
+        <h4>🔌 Power</h4>
+        <p>Real Power: <span>{{power}} W</span></p>
+      </div>
+
+      <div class="section">
+        <h4>📟 Electrical</h4>
+        <p>Voltage: <span>{{voltage}} V</span></p>
+        <p>Current: <span>{{current}} A</span></p>
+      </div>
+
+      <div class="footer">
+        <span>ID: {{id}}</span>
+      </div>
+
+    </div>
+    {{/each}}
+  </div>
+
+  <a href="/user/dashboard/USER001" class="back-btn">
+    ← Back to Dashboard
+  </a>
+</div>

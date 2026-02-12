@@ -1,0 +1,40 @@
+# =========================
+# Node.js (Backend)
+# =========================
+
+backend/node_modules/
+backend/.env
+backend/config/firebaseServiceKey.json
+# Logs
+backend/npm-debug.log*
+backend/yarn-debug.log*
+backend/yarn-error.log*
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# =========================
+# Python AI Service
+# =========================
+
+ai-service/venv/
+ai-service/__pycache__/
+ai-service/*.pyc
+
+# Root Python venv (if used)
+.venv/
+
+# =========================
+# Environment Files (Anywhere)
+# =========================
+
+.env
+*.env
+
+# =========================
+# IDE
+# =========================
+
+.vscode/
+.idea/

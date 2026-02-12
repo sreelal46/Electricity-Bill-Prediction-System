@@ -1,0 +1,68 @@
+<style>
+  * {
+    box-sizing: border-box;
+    font-family: "Segoe UI", sans-serif;
+  }
+
+  body {
+    margin: 0;
+    height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: whitesmoke;
+  }
+
+  .error-container {
+    background: #fff;
+    padding: 50px 40px;
+    border-radius: 20px;
+    text-align: center;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+    max-width: 500px;
+    width: 90%;
+  }
+
+  .error-code {
+    font-size: 5rem;
+    font-weight: 800;
+    margin: 0;
+    color: #0d6efd;
+  }
+
+  .error-title {
+    font-size: 1.5rem;
+    margin: 10px 0 15px;
+    color: #333;
+  }
+
+  .error-text {
+    color: #666;
+    margin-bottom: 25px;
+  }
+
+  .home-btn {
+    display: inline-block;
+    padding: 12px 22px;
+    border-radius: 10px;
+    background: #0d6efd;
+    color: #fff;
+    text-decoration: none;
+    font-weight: 500;
+    transition: 0.2s ease;
+  }
+
+  .home-btn:hover {
+    background: #0b5ed7;
+    transform: translateY(-2px);
+  }
+</style>
+
+<div class="error-container">
+  <h1 class="error-code">404</h1>
+  <h2 class="error-title">Page Not Found</h2>
+  <p class="error-text">
+    The page you are looking for doesn’t exist or has been moved.
+  </p>
+  <a href="/" class="home-btn">🏠 Go Home</a>
+</div>
