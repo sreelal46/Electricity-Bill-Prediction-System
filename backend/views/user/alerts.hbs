@@ -1,173 +1,370 @@
+<script src="https://unpkg.com/lucide@latest"></script>
 <style>
-  * {
-    box-sizing: border-box;
-    font-family: "Segoe UI", sans-serif;
-  }
-
-  body {
-    background: #f4f6f8;
-    margin: 0;
-    padding: 30px;
-  }
-
-  .alerts-page {
-    max-width: 1100px;
-    margin: auto;
-  }
-
-  h1 {
-    margin-bottom: 20px;
-    color: #222;
-  }
-
-  .alerts-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-    gap: 20px;
-  }
-
-  .alert-card {
-    background: #fff;
-    border-radius: 14px;
-    padding: 18px;
-    box-shadow: 0 8px 22px rgba(0, 0, 0, 0.06);
-    border-left: 6px solid #999;
-  }
-
-  .alert-header {
+  /* Page-specific styles */
+  .header {
     display: flex;
     justify-content: space-between;
-    margin-bottom: 10px;
+    align-items: center;
+    margin-bottom: 3rem;
+    animation: slideDown 0.6s ease-out;
   }
 
-  .alert-type {
-    font-weight: 600;
-    color: #333;
-  }
-
-  .severity {
-    font-size: 0.8rem;
+  .header-content h1 {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    font-size: 2.5rem;
     font-weight: 700;
-    padding: 4px 10px;
-    border-radius: 20px;
-    color: #fff;
+    background: linear-gradient(135deg, var(--text-primary) 0%, var(--accent-blue) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 0.5rem;
   }
 
-  /* Severity colors */
-  .severity-HIGH {
-    border-left-color: #dc3545;
+  .header-content h1 svg {
+    width: 36px;
+    height: 36px;
+    color: var(--accent-purple);
   }
 
-  .severity-HIGH .severity {
-    background: #dc3545;
+  .header-subtitle {
+    color: var(--text-secondary);
+    font-size: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
   }
 
-  .severity-MEDIUM {
-    border-left-color: #fd7e14;
+  /* Stats Cards */
+  .stats-card {
+    display: flex;
+    align-items: center;
+    gap: 1.25rem;
   }
 
-  .severity-MEDIUM .severity {
-    background: #fd7e14;
+  .stats-icon {
+    width: 56px;
+    height: 56px;
+    border-radius: var(--radius-md);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
   }
 
-  .severity-LOW {
-    border-left-color: #198754;
+  .stats-icon svg {
+    width: 28px;
+    height: 28px;
   }
 
-  .severity-LOW .severity {
-    background: #198754;
+  .stats-content h3 {
+    font-size: 2rem;
+    font-weight: 700;
+    font-family: 'JetBrains Mono', monospace;
+    margin-bottom: 0.25rem;
+    color: var(--text-primary);
   }
 
-  .alert-body p {
-    margin: 6px 0;
-    color: #555;
+  .stats-content p {
+    font-size: 0.875rem;
+    color: var(--text-secondary);
   }
 
-  .alert-footer {
+  /* Alert Items */
+  .alert-item {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 1.5rem;
     display: flex;
     justify-content: space-between;
-    margin-top: 12px;
-    padding-top: 8px;
-    border-top: 1px dashed #eee;
-    font-size: 0.85rem;
+    align-items: center;
+    transition: all 0.3s ease;
+    animation: fadeInUp 0.4s ease-out backwards;
   }
 
-  .status {
+  .alert-item:hover {
+    transform: translateX(4px);
+    box-shadow: var(--shadow-md);
+  }
+
+  .alert-item.severity-high {
+    background: rgba(239, 68, 68, 0.05);
+    border-color: rgba(239, 68, 68, 0.2);
+  }
+
+  .alert-item.severity-medium {
+    background: rgba(245, 158, 11, 0.05);
+    border-color: rgba(245, 158, 11, 0.2);
+  }
+
+  .alert-item.severity-low {
+    background: rgba(59, 130, 246, 0.05);
+    border-color: rgba(59, 130, 246, 0.2);
+  }
+
+  .alert-content-wrapper {
+    display: flex;
+    align-items: flex-start;
+    gap: 1.25rem;
+    flex: 1;
+  }
+
+  .alert-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: var(--radius-md);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+
+  .alert-icon svg {
+    width: 22px;
+    height: 22px;
+  }
+
+  .alert-icon.severity-high {
+    background: rgba(239, 68, 68, 0.1);
+    color: var(--accent-red);
+  }
+
+  .alert-icon.severity-medium {
+    background: rgba(245, 158, 11, 0.1);
+    color: var(--accent-yellow);
+  }
+
+  .alert-icon.severity-low {
+    background: rgba(59, 130, 246, 0.1);
+    color: var(--accent-blue);
+  }
+
+  .alert-details {
+    flex: 1;
+  }
+
+  .alert-message {
     font-weight: 600;
-  }
-
-  .status.danger {
-    color: #dc3545;
-  }
-
-  .status.ok {
-    color: #198754;
-  }
-
-  .alert-id {
-    color: #777;
-  }
-
-  .resolved {
-    opacity: 0.7;
-  }
-
-  .no-alerts {
-    color: #555;
     font-size: 1rem;
+    margin-bottom: 0.5rem;
+    line-height: 1.4;
   }
 
-  .back-btn {
-    display: inline-block;
-    margin-top: 25px;
-    text-decoration: none;
-    color: #0d6efd;
-    font-weight: 500;
+  .alert-message.severity-high {
+    color: var(--accent-red);
+  }
+
+  .alert-message.severity-medium {
+    color: var(--accent-yellow);
+  }
+
+  .alert-message.severity-low {
+    color: var(--accent-blue);
+  }
+
+  .alert-timestamp {
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .alert-timestamp svg {
+    width: 14px;
+    height: 14px;
+  }
+
+  .unread-badge {
+    background: rgba(99, 102, 241, 0.1);
+    color: var(--accent-indigo);
+    padding: 0.375rem 0.875rem;
+    border-radius: 999px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    display: flex;
+    align-items: center;
+    gap: 0.375rem;
+  }
+
+  .unread-badge svg {
+    width: 12px;
+    height: 12px;
+  }
+
+  /* Section Heading */
+  .section-heading {
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin-bottom: 1.5rem;
+    color: var(--text-primary);
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  .section-heading svg {
+    width: 24px;
+    height: 24px;
+    color: var(--accent-blue);
+  }
+
+  /* Animation delays for alerts */
+  .alert-item:nth-child(1) {
+    animation-delay: 0.1s;
+  }
+
+  .alert-item:nth-child(2) {
+    animation-delay: 0.15s;
+  }
+
+  .alert-item:nth-child(3) {
+    animation-delay: 0.2s;
+  }
+
+  .alert-item:nth-child(4) {
+    animation-delay: 0.25s;
+  }
+
+  .alert-item:nth-child(5) {
+    animation-delay: 0.3s;
+  }
+
+  .alert-item:nth-child(6) {
+    animation-delay: 0.35s;
+  }
+
+  /* Alerts list container */
+  .alerts-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
   }
 </style>
 
-<div class="alerts-page">
-  <a href="/" class="back-btn">
-    ← Back to Home
-  </a>
+<!-- Data holder for alerts -->
+<div id="alertsData" data-alerts='{{json alerts}}' style="display: none;"></div>
 
-  <h1>🚨 Alerts</h1>
+<div class="container">
+  <!-- HEADER -->
+  <header class="header">
+    <div class="header-content">
+      <h1>
+        <i data-lucide="bell"></i>
+        System Alerts
+      </h1>
+      <div class="header-subtitle">
+        <span class="status-indicator"></span>
+        <span>System Health Status</span>
+      </div>
+    </div>
+  </header>
 
-  {{#if alerts.length}}
-  <div class="alerts-grid">
+  <!-- STATS CARDS -->
+  <div class="grid grid-cols-3 mb-4">
+    <div class="card stats-card fade-in-up">
+      <div class="stats-icon" style="background: rgba(239, 68, 68, 0.1); color: var(--accent-red);">
+        <i data-lucide="alert-octagon"></i>
+      </div>
+      <div class="stats-content">
+        <h3 id="criticalCount">0</h3>
+        <p>Critical Alerts</p>
+      </div>
+    </div>
+
+    <div class="card stats-card fade-in-up" style="animation-delay: 0.1s;">
+      <div class="stats-icon" style="background: rgba(245, 158, 11, 0.1); color: var(--accent-yellow);">
+        <i data-lucide="alert-triangle"></i>
+      </div>
+      <div class="stats-content">
+        <h3 id="warningCount">0</h3>
+        <p>Warnings</p>
+      </div>
+    </div>
+
+    <div class="card stats-card fade-in-up" style="animation-delay: 0.2s;">
+      <div class="stats-icon" style="background: rgba(59, 130, 246, 0.1); color: var(--accent-blue);">
+        <i data-lucide="info"></i>
+      </div>
+      <div class="stats-content">
+        <h3 id="lowCount">0</h3>
+        <p>Info Alerts</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- RECENT ALERTS SECTION -->
+  <h2 class="section-heading">
+    <i data-lucide="bell-ring"></i>
+    Recent Alerts
+  </h2>
+
+  {{#if alerts}}
+  <div class="alerts-list">
     {{#each alerts}}
-    <div class="alert-card severity-{{severity}} {{#if (eq status 'read')}}resolved{{/if}}">
-
-      <div class="alert-header">
-        <span class="alert-type">{{alert_type}}</span>
-        <span class="severity">{{severity}}</span>
+    <div
+      class="alert-item {{#if (eq this.severity 'HIGH')}}severity-high{{else if (eq this.severity 'MEDIUM')}}severity-medium{{else}}severity-low{{/if}}">
+      <div class="alert-content-wrapper">
+        <div
+          class="alert-icon {{#if (eq this.severity 'HIGH')}}severity-high{{else if (eq this.severity 'MEDIUM')}}severity-medium{{else}}severity-low{{/if}}">
+          {{#if (eq this.severity "HIGH")}}
+          <i data-lucide="alert-octagon"></i>
+          {{else if (eq this.severity "MEDIUM")}}
+          <i data-lucide="alert-triangle"></i>
+          {{else}}
+          <i data-lucide="info"></i>
+          {{/if}}
+        </div>
+        <div class="alert-details">
+          <div
+            class="alert-message {{#if (eq this.severity 'HIGH')}}severity-high{{else if (eq this.severity 'MEDIUM')}}severity-medium{{else}}severity-low{{/if}}">
+            {{this.message}}
+          </div>
+          <div class="alert-timestamp">
+            <i data-lucide="clock"></i>
+            {{this.timestamp}}
+          </div>
+        </div>
       </div>
-
-      <div class="alert-body">
-        <p><strong>Message:</strong></p>
-        <p>{{message}}</p>
-
-        <p><strong>Time:</strong> {{timestamp}}</p>
+      {{#if (eq this.status "unread")}}
+      <div class="unread-badge">
+        <i data-lucide="circle"></i>
+        Unread
       </div>
-
-      <div class="alert-footer">
-        {{#if (eq status 'read')}}
-        <span class="status ok">Read</span>
-        {{else}}
-        <span class="status danger">Unread</span>
-        {{/if}}
-
-        <span class="alert-id">{{id}}</span>
-      </div>
-
+      {{/if}}
     </div>
     {{/each}}
   </div>
   {{else}}
-  <p class="no-alerts">No alerts found 🎉</p>
+  <div class="alert alert-info">
+    <p>No alerts found. Your system is running smoothly!</p>
+  </div>
   {{/if}}
-
-  <a href="/user/dashboard/USER001" class="back-btn">
-    ← Back to Dashboard
-  </a>
 </div>
+
+<script>
+  // ========================================
+  // COUNT ALERTS BY SEVERITY
+  // ========================================
+  const alertsDataElement = document.getElementById('alertsData');
+  const alerts = JSON.parse(alertsDataElement.dataset.alerts || '[]');
+
+  // Count each severity level
+  const highCount = alerts.filter(a => a.severity === 'HIGH').length;
+  const mediumCount = alerts.filter(a => a.severity === 'MEDIUM').length;
+  const lowCount = alerts.filter(a => a.severity === 'LOW').length;
+
+  // Update the counts in the UI
+  document.getElementById('criticalCount').textContent = highCount;
+  document.getElementById('warningCount').textContent = mediumCount;
+  document.getElementById('lowCount').textContent = lowCount;
+
+  // ========================================
+  // INITIALIZE LUCIDE ICONS
+  // ========================================
+  lucide.createIcons();
+</script>

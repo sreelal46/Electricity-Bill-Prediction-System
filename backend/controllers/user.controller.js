@@ -16,15 +16,13 @@ export const verifyUser = async (req, res, next) => {
 export const registerPage = (req, res) => {
   res.status(200).render("user/register", { layout: false });
 };
-export const predictPage = (req, res) => {
-  res.status(200).render("user/predictions");
-};
+
 export const dashboardController = async (req, res) => {
   const userId = req.session?.user?.id || "USER001";
 
   try {
     /* ===============================
-       GET DAILY TREND (unchanged)
+       GET DAILY TREND
     =============================== */
     const dailySnap = await db.ref(`daily_data/${userId}`).once("value");
 
@@ -39,27 +37,27 @@ export const dashboardController = async (req, res) => {
       });
     }
 
+    // Sort by date
     dailyTrend.sort((a, b) => new Date(a.date) - new Date(b.date));
 
+    // Get latest reading from daily data
     const latestReading =
       dailyTrend.length > 0 ? dailyTrend[dailyTrend.length - 1] : null;
 
     /* ===============================
-       🔥 GET TODAY READINGS
+       GET TODAY'S READINGS
     =============================== */
-
     const readingSnap = await db.ref(`readings/${userId}`).once("value");
 
     const todayReadings = [];
-
-    const today = new Date().toISOString().split("T")[0];
-    // format: YYYY-MM-DD
+    const today = new Date().toISOString().split("T")[0]; // format: YYYY-MM-DD
 
     if (readingSnap.exists()) {
       readingSnap.forEach((child) => {
         const reading = child.val();
 
-        if (reading.timestamp.startsWith(today)) {
+        // Filter readings for today
+        if (reading.timestamp && reading.timestamp.startsWith(today)) {
           todayReadings.push({
             id: child.key,
             ...reading,
@@ -70,13 +68,31 @@ export const dashboardController = async (req, res) => {
 
     // Sort by timestamp
     todayReadings.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+
+    console.log("📊 Dashboard Data Summary:", {
+      dailyTrendCount: dailyTrend.length,
+      todayReadingsCount: todayReadings.length,
+      hasLatestReading: !!latestReading,
+    });
+
+    /* ===============================
+       RENDER DASHBOARD VIEW
+       For Handlebars, we need to serialize
+       objects to JSON strings
+    =============================== */
     res.render("user/dashboard", {
+      // Send JSON-stringified data for Handlebars
+      dailyTrendJSON: JSON.stringify(dailyTrend),
+      latestReadingJSON: JSON.stringify(latestReading),
+      todayReadingsJSON: JSON.stringify(todayReadings),
+
+      // Also send raw data in case you want to use it directly in HBS
       dailyTrend,
       latestReading,
       todayReadings,
     });
   } catch (err) {
-    console.log(err);
+    console.error("❌ Dashboard Error:", err);
     res.status(500).send(err.message);
   }
 };
@@ -130,7 +146,8 @@ export const dailyUseage = async (req, res, next) => {
 };
 
 export const alertController = async (req, res, next) => {
-  const { userId } = req.params;
+  // const { userId } = req.params;
+  const userId = "USER001";
 
   try {
     const snapshot = await db.ref(`user_alerts/${userId}`).once("value");
@@ -146,10 +163,231 @@ export const alertController = async (req, res, next) => {
       id,
       ...value,
     }));
-
+    console.log(alerts);
     res.render("user/alerts", { alerts });
   } catch (err) {
     res.status(500).json({ error: err.message });
+  }
+};
+export const profilePage = async (req, res, next) => {
+  const userId = "USER001"; // later you can use req.session.user.id
+
+  try {
+    const snapshot = await db.ref(`users/${userId}`).once("value");
+
+    // If user does not exist
+    if (!snapshot.exists()) {
+      return res.status(404).render("404", {
+        title: "User Not Found",
+        message: "User profile does not exist",
+        layout: false,
+      });
+    }
+
+    const user = snapshot.val();
+    console.log(user);
+    // Render profile page with user data
+    res.render("user/profile", {
+      title: "User Profile",
+      user,
+    });
+  } catch (error) {
+    console.error("Profile Page Error:", error);
+
+    res.status(500).render("500", {
+      title: "Server Error",
+      message: "Something went wrong while loading profile",
+      layout: false,
+    });
+  }
+};
+export const predictPage = async (req, res, next) => {
+  // const { userId } = req.query;
+  const userId = "USER001";
+
+  if (!userId) {
+    return res.status(400).render("error", {
+      message: "userId is required as a query parameter",
+    });
+  }
+
+  try {
+    const snapshot = await db.ref(`daily_data/${userId}`).once("value");
+
+    if (!snapshot.exists()) {
+      return res.render("predictions", {
+        message: "No data found for this user",
+        userId: userId,
+        noData: true,
+      });
+    }
+
+    const allData = snapshot.val();
+    const dataArray = Object.values(allData);
+    dataArray.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+    const availableDays = dataArray.length;
+    const results = {
+      userId: userId,
+      availableDays: availableDays,
+      predictions: {},
+      generatedAt: new Date().toISOString(),
+    };
+
+    // DAILY PREDICTION
+    try {
+      let dailySelectedDays = [];
+      let dailyDaysUsed = 0;
+
+      if (availableDays >= 30) {
+        dailySelectedDays = dataArray.slice(0, 30);
+        dailyDaysUsed = 30;
+      } else if (availableDays >= 14) {
+        dailySelectedDays = dataArray.slice(0, 14);
+        dailyDaysUsed = 14;
+      } else if (availableDays >= 7) {
+        dailySelectedDays = dataArray.slice(0, 7);
+        dailyDaysUsed = 7;
+      } else if (availableDays >= 3) {
+        dailySelectedDays = dataArray.slice(0, 3);
+        dailyDaysUsed = 3;
+      } else {
+        results.predictions.daily = {
+          error: "Not enough data for prediction (minimum 3 days required)",
+          availableDays: availableDays,
+        };
+      }
+
+      if (dailySelectedDays.length > 0) {
+        const dailyResponse = await axios.post(
+          "http://localhost:5000/predict",
+          {
+            history: dailySelectedDays,
+            prediction_type: "daily",
+          },
+        );
+
+        results.predictions.daily = {
+          daysUsed: dailyDaysUsed,
+          inputCount: dailySelectedDays.length,
+          prediction: dailyResponse.data,
+        };
+      }
+    } catch (error) {
+      console.error("Daily prediction error:", error.message);
+      results.predictions.daily = {
+        error: "Failed to generate daily prediction",
+        details: error.message,
+      };
+    }
+
+    // WEEKLY PREDICTION
+    try {
+      let weeklySelectedDays = [];
+      let weeklyDaysUsed = 0;
+
+      if (availableDays >= 30) {
+        weeklySelectedDays = dataArray.slice(0, 30);
+        weeklyDaysUsed = 30;
+      } else if (availableDays >= 21) {
+        weeklySelectedDays = dataArray.slice(0, 21);
+        weeklyDaysUsed = 21;
+      } else if (availableDays >= 14) {
+        weeklySelectedDays = dataArray.slice(0, 14);
+        weeklyDaysUsed = 14;
+      } else if (availableDays >= 7) {
+        weeklySelectedDays = dataArray.slice(0, availableDays);
+        weeklyDaysUsed = availableDays;
+      } else {
+        results.predictions.weekly = {
+          error:
+            "Not enough data for weekly prediction (minimum 7 days required)",
+          availableDays: availableDays,
+        };
+      }
+
+      if (weeklySelectedDays.length > 0) {
+        const weeklyResponse = await axios.post(
+          "http://localhost:5000/predict",
+          {
+            history: weeklySelectedDays,
+            prediction_type: "weekly",
+          },
+        );
+
+        results.predictions.weekly = {
+          daysUsed: weeklyDaysUsed,
+          inputCount: weeklySelectedDays.length,
+          prediction: weeklyResponse.data,
+        };
+      }
+    } catch (error) {
+      console.error("Weekly prediction error:", error.message);
+      results.predictions.weekly = {
+        error: "Failed to generate weekly prediction",
+        details: error.message,
+      };
+    }
+
+    // MONTHLY PREDICTION
+    try {
+      let monthlySelectedDays = [];
+      let monthlyDaysUsed = 0;
+
+      if (availableDays >= 60) {
+        monthlySelectedDays = dataArray.slice(0, 60);
+        monthlyDaysUsed = 60;
+      } else if (availableDays >= 45) {
+        monthlySelectedDays = dataArray.slice(0, 45);
+        monthlyDaysUsed = 45;
+      } else if (availableDays >= 30) {
+        monthlySelectedDays = dataArray.slice(0, 30);
+        monthlyDaysUsed = 30;
+      } else if (availableDays >= 21) {
+        monthlySelectedDays = dataArray.slice(0, availableDays);
+        monthlyDaysUsed = availableDays;
+      } else if (availableDays >= 14) {
+        monthlySelectedDays = dataArray.slice(0, availableDays);
+        monthlyDaysUsed = availableDays;
+      } else {
+        results.predictions.monthly = {
+          error:
+            "Not enough data for monthly prediction (minimum 14 days required)",
+          availableDays: availableDays,
+        };
+      }
+
+      if (monthlySelectedDays.length > 0) {
+        const monthlyResponse = await axios.post(
+          "http://localhost:5000/predict",
+          {
+            history: monthlySelectedDays,
+            prediction_type: "monthly",
+          },
+        );
+
+        results.predictions.monthly = {
+          daysUsed: monthlyDaysUsed,
+          inputCount: monthlySelectedDays.length,
+          prediction: monthlyResponse.data,
+        };
+      }
+    } catch (error) {
+      console.error("Monthly prediction error:", error.message);
+      results.predictions.monthly = {
+        error: "Failed to generate monthly prediction",
+        details: error.message,
+      };
+    }
+
+    // Render the predictions page with all data
+    res.render("user/predictions", results);
+  } catch (error) {
+    console.error("Predictions page error:", error.message);
+    res.status(500).render("error", {
+      error: "Server error while generating predictions",
+      details: error.message,
+    });
   }
 };
 
@@ -325,4 +563,20 @@ export const predictNextMonth = async (req, res, next) => {
     console.error("Monthly prediction error:", error.message);
     res.status(500).json({ error: "Server error during monthly prediction" });
   }
+};
+// Logout Controller
+export const logoutController = (req, res) => {
+  // Destroy the session
+  // req.session.destroy((err) => {
+  //   if (err) {
+  //     console.error("❌ Logout Error:", err);
+  //     return res.status(500).send("Error logging out");
+  //   }
+
+  //   // Clear the session cookie
+  //   res.clearCookie('connect.sid'); // Default session cookie name
+
+  //   // Redirect to home page
+  res.redirect("/");
+  // });
 };

@@ -4,45 +4,268 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>{{title}}</title>
-
-  <!-- Google Font -->
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-
-  <!-- Tailwind CDN -->
-  <script src="https://cdn.tailwindcss.com"></script>
+  <title>Sign In - EnergyGuard</title>
+  <link rel="stylesheet" href="/css/common.css">
+  <script src="https://unpkg.com/lucide@latest"></script>
 
   <style>
     body {
-      font-family: 'Inter', sans-serif;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+    }
+
+    .login-container {
+      width: 100%;
+      max-width: 480px;
+      padding: 2rem;
+    }
+
+    .login-logo {
+      width: 64px;
+      height: 64px;
+      background: linear-gradient(135deg, var(--accent-blue) 0%, var(--accent-indigo) 100%);
+      border-radius: 1rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 1.5rem;
+      box-shadow: 0 8px 24px rgba(59, 130, 246, 0.3);
+    }
+
+    .login-logo svg {
+      width: 36px;
+      height: 36px;
+      color: white;
+    }
+
+    .login-title {
+      font-size: 2rem;
+      font-weight: 700;
+      text-align: center;
+      margin-bottom: 0.5rem;
+      color: var(--text-primary);
+    }
+
+    .login-subtitle {
+      text-align: center;
+      color: var(--text-secondary);
+      margin-bottom: 2rem;
+      font-size: 0.95rem;
+    }
+
+    .login-subtitle a {
+      color: var(--accent-blue);
+      text-decoration: none;
+      font-weight: 500;
+    }
+
+    .login-subtitle a:hover {
+      text-decoration: underline;
+    }
+
+    .login-card {
+      background: var(--bg-card);
+      border-radius: 1.5rem;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.1);
+      padding: 2.5rem;
+      border: 1px solid var(--border);
+    }
+
+    .login-toggle {
+      background: var(--bg-secondary);
+      padding: 0.375rem;
+      border-radius: 0.75rem;
+      display: flex;
+      margin-bottom: 2rem;
+    }
+
+    .toggle-option {
+      flex: 1;
+      text-align: center;
+      padding: 0.75rem;
+      border-radius: 0.5rem;
+      font-weight: 600;
+      font-size: 0.95rem;
+      transition: all 0.2s ease;
+      cursor: pointer;
+      text-decoration: none;
+      color: var(--text-secondary);
+    }
+
+    .toggle-option.active {
+      background: var(--bg-card);
+      color: var(--text-primary);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    }
+
+    .form-group {
+      margin-bottom: 1.5rem;
+    }
+
+    .form-label {
+      display: block;
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-bottom: 0.5rem;
+    }
+
+    .form-input {
+      width: 100%;
+      padding: 0.875rem 1rem;
+      border: 1px solid var(--border);
+      border-radius: 0.75rem;
+      font-size: 0.95rem;
+      transition: all 0.2s ease;
+      font-family: 'DM Sans', sans-serif;
+      background: var(--bg-card);
+      color: var(--text-primary);
+    }
+
+    .form-input:focus {
+      outline: none;
+      border-color: var(--accent-blue);
+      box-shadow: 0 0 0 3px var(--glow);
+    }
+
+    .form-input::placeholder {
+      color: var(--text-secondary);
+    }
+
+    .form-options {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1.5rem;
+      font-size: 0.875rem;
+    }
+
+    .checkbox-label {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      color: var(--text-secondary);
+      cursor: pointer;
+    }
+
+    .checkbox-label input {
+      cursor: pointer;
+    }
+
+    .forgot-link {
+      color: var(--accent-blue);
+      text-decoration: none;
+      font-weight: 500;
+    }
+
+    .forgot-link:hover {
+      text-decoration: underline;
+    }
+
+    .submit-btn {
+      width: 100%;
+      padding: 1rem;
+      background: linear-gradient(135deg, var(--accent-blue) 0%, var(--accent-indigo) 100%);
+      color: white;
+      border: none;
+      border-radius: 0.75rem;
+      font-weight: 600;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+    }
+
+    .submit-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(59, 130, 246, 0.4);
+    }
+
+    .submit-btn svg {
+      width: 20px;
+      height: 20px;
+    }
+
+    .divider {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      margin: 1.5rem 0;
+      font-size: 0.875rem;
+      color: var(--text-secondary);
+    }
+
+    .divider::before,
+    .divider::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--border);
+    }
+
+    .register-link {
+      text-align: center;
+      font-size: 0.95rem;
+    }
+
+    .register-link a {
+      color: var(--accent-blue);
+      font-weight: 600;
+      text-decoration: none;
+    }
+
+    .register-link a:hover {
+      text-decoration: underline;
+    }
+
+    .input-icon {
+      position: relative;
+    }
+
+    .input-icon svg {
+      position: absolute;
+      left: 1rem;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 20px;
+      height: 20px;
+      color: var(--text-secondary);
+    }
+
+    .input-icon .form-input {
+      padding-left: 3rem;
     }
   </style>
 </head>
 
-<body class="min-h-screen flex items-center justify-center bg-gradient-to-b from-slate-100 to-white text-slate-800">
+<body>
 
-  <div class="w-full max-w-md px-4 text-center">
-
+  <div class="login-container">
     <!-- Logo -->
-    <div
-      class="mx-auto mb-6 w-14 h-14 bg-teal-600 text-white rounded-xl flex items-center justify-center shadow-lg text-xl">
-      ⚡
+    <div class="login-logo">
+      <i data-lucide="zap"></i>
     </div>
 
-    <h1 class="text-3xl font-bold mb-2">Sign in to your account</h1>
-    <p class="text-sm text-slate-500 mb-8">
-      Or <a href="/" class="text-teal-600 hover:underline">return to home page</a>
+    <h1 class="login-title">Sign in to your account</h1>
+    <p class="login-subtitle">
+      Or <a href="/">return to home page</a>
     </p>
 
-    <!-- Card -->
-    <div class="bg-white rounded-2xl shadow-xl p-8 text-left">
-
+    <!-- Login Card -->
+    <div class="login-card">
       <!-- Toggle -->
-      <div class="bg-slate-100 p-1 rounded-lg flex mb-6">
-        <div class="w-1/2 text-center py-2 rounded-md bg-white font-medium shadow">
+      <div class="login-toggle">
+        <div class="toggle-option active">
           User Login
         </div>
-        <a href="/admin/login" class="w-1/2 text-center py-2 rounded-md text-slate-500 hover:text-slate-700">
+        <a href="/admin/login" class="toggle-option">
           Admin Login
         </a>
       </div>
@@ -50,45 +273,55 @@
       <!-- Form -->
       <form action="/user/login" method="POST">
 
-        <label class="block text-sm font-medium mb-2">Email address</label>
-        <input type="email" name="email"
-          class="w-full mb-4 px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
-          placeholder="user@example.com" required />
-
-        <label class="block text-sm font-medium mb-2">Password</label>
-        <input type="password" name="password"
-          class="w-full mb-4 px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
-          placeholder="••••••••" required />
-
-        <div class="flex justify-between items-center mb-6 text-sm">
-          <label class="flex items-center gap-2">
-            <input type="checkbox" />
-            Remember me
-          </label>
-          <a href="#" class="text-teal-600 hover:underline">Forgot password?</a>
+        <!-- Consumer Number -->
+        <div class="form-group">
+          <label class="form-label">Consumer Number</label>
+          <div class="input-icon">
+            <i data-lucide="hash"></i>
+            <input type="text" name="consumer_number" class="form-input" placeholder="Enter your consumer number"
+              required />
+          </div>
         </div>
 
-        <button class="w-full bg-slate-900 text-white py-3 rounded-lg hover:opacity-90 transition">
-          Sign in →
-        </button>
+        <!-- Phone Number -->
+        <div class="form-group">
+          <label class="form-label">Phone Number</label>
+          <div class="input-icon">
+            <i data-lucide="phone"></i>
+            <input type="tel" name="phone" class="form-input" placeholder="+91-9876543210" pattern="[+]?[0-9]{10,15}"
+              required />
+          </div>
+        </div>
 
+        <!-- Options -->
+        <!-- <div class="form-options">
+          <label class="checkbox-label">
+            <input type="checkbox" name="remember" />
+            <span>Remember me</span>
+          </label>
+          <a href="#" class="forgot-link">Forgot details?</a>
+        </div> -->
+
+        <!-- Submit -->
+        <button type="submit" class="submit-btn">
+          <span>Sign in</span>
+          <i data-lucide="arrow-right"></i>
+        </button>
       </form>
 
-      <div class="text-center mt-6 text-sm text-slate-500">
-        <div class="flex items-center gap-3 mb-3">
-          <div class="flex-1 h-px bg-slate-200"></div>
-          New to EnergyGuard?
-          <div class="flex-1 h-px bg-slate-200"></div>
-        </div>
+      <!-- Divider -->
+      <div class="divider">New to EnergyGuard?</div>
 
-        <a href="/user/register" class="text-teal-600 font-medium hover:underline">
-          Create an account
-        </a>
+      <!-- Register Link -->
+      <div class="register-link">
+        <a href="/user/register">Create an account</a>
       </div>
-
     </div>
-
   </div>
+
+  <script>
+    lucide.createIcons();
+  </script>
 
 </body>
 

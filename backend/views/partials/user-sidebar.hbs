@@ -1,118 +1,273 @@
-<aside
-  class="w-64 bg-gradient-to-b from-slate-900 to-slate-950 text-slate-300 min-h-screen flex flex-col justify-between">
+<!-- SIDEBAR PARTIAL - WITH LOGOUT CONFIRMATION -->
+<!-- File: views/partials/user-sidebar.hbs -->
 
+<aside class="sidebar">
   <!-- Top Section -->
-  <div>
-
+  <div style="flex: 1; overflow-y: auto;">
     <!-- Logo -->
-    <div class="flex items-center gap-3 px-6 py-6 border-b border-slate-800">
-      <div class="w-10 h-10 bg-teal-600 rounded-lg flex items-center justify-center">
-        <!-- Bolt Icon -->
-        <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 20 20">
-          <path d="M11.3 1L2 11h6l-1 8 9.3-10h-6l1-8z" />
-        </svg>
+    <div class="sidebar-logo">
+      <div class="logo-icon">
+        <i data-lucide="zap"></i>
       </div>
-      <span class="text-lg font-semibold text-white">EnergyGuard</span>
+      <span class="logo-text">EnergyGuard</span>
     </div>
 
-    <!-- Menu -->
-    <nav class="mt-6 space-y-2 px-4">
+    <!-- Navigation -->
+    <nav class="sidebar-nav">
+      <div class="nav-section">
+        <div class="nav-section-title">Main Menu</div>
 
-      <!-- Dashboard -->
-      <a href="/user/dashboard" class="flex items-center gap-3 px-4 py-3 rounded-lg transition
-         {{#if (eq active 'dashboard')}} bg-slate-800 text-teal-400 {{else}} hover:bg-slate-800 {{/if}}">
-        <!-- Chart Bar Icon -->
-        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.5"
-          viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M3 3v18h18M9 17V9m4 8V5m4 12v-6" />
-        </svg>
-        <span>Dashboard</span>
-      </a>
+        <a href="/user/dashboard" class="nav-link {{#if (eq active 'dashboard')}}active{{/if}}">
+          <i data-lucide="layout-dashboard"></i>
+          <span>Dashboard</span>
+        </a>
 
-      <!-- Analytics -->
-      <!-- <a href="/analytics" class="flex items-center gap-3 px-4 py-3 rounded-lg transition
-         {{#if (eq active 'analytics')}} bg-slate-800 text-teal-400 {{else}} hover:bg-slate-800 {{/if}}">
-        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.5"
-          viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M3 17l6-6 4 4 8-8" />
-        </svg>
-        <span>Analytics</span>
-      </a> -->
+        <a href="/user/predictions" class="nav-link {{#if (eq active 'predictions')}}active{{/if}}">
+          <i data-lucide="brain-circuit"></i>
+          <span>AI Predictions</span>
+        </a>
 
-      <!-- Predictions -->
-      <a href="/user/predictions" class="flex items-center gap-3 px-4 py-3 rounded-lg transition
-         {{#if (eq active 'predictions')}} bg-slate-800 text-teal-400 {{else}} hover:bg-slate-800 {{/if}}">
-        <!-- Chart Pie Icon -->
-        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.5"
-          viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M11.25 3v9.75H21A9 9 0 1111.25 3z" />
-        </svg>
-        <span>Predictions</span>
-      </a>
+        <a href="/user/alerts" class="nav-link {{#if (eq active 'alerts')}}active{{/if}}">
+          <i data-lucide="bell"></i>
+          <span>Alerts</span>
+          {{#if alertCount}}
+          <span class="nav-badge">{{alertCount}}</span>
+          {{/if}}
+        </a>
+      </div>
 
-      <!-- Alerts -->
-      <a href="/alerts" class="flex items-center gap-3 px-4 py-3 rounded-lg transition
-         {{#if (eq active 'alerts')}} bg-slate-800 text-teal-400 {{else}} hover:bg-slate-800 {{/if}}">
-        <!-- Bell Icon -->
-        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.5"
-          viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round"
-            d="M15 17h5l-1.4-1.4A2 2 0 0118 14V11a6 6 0 10-12 0v3c0 .53-.21 1.04-.59 1.41L4 17h5m6 0a3 3 0 11-6 0" />
-        </svg>
-        <span>Alerts</span>
-      </a>
+      <div class="nav-section">
+        <div class="nav-section-title">Account</div>
 
-      <!-- Settings -->
-      <a href="/settings" class="flex items-center gap-3 px-4 py-3 rounded-lg transition
-         {{#if (eq active 'settings')}} bg-slate-800 text-teal-400 {{else}} hover:bg-slate-800 {{/if}}">
-        <!-- Cog Icon -->
-        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.5"
-          viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round"
-            d="M11.25 3h1.5M4.22 5.64l1.06-1.06M3 11.25v1.5m2.28 6.11l-1.06 1.06M11.25 21h1.5m6.11-2.28l1.06 1.06M21 11.25v1.5m-2.28-6.11l1.06-1.06M12 8.25a3.75 3.75 0 100 7.5 3.75 3.75 0 000-7.5z" />
-        </svg>
-        <span>Settings</span>
-      </a>
-
-      <!-- Profile -->
-      <a href="/profile" class="flex items-center gap-3 px-4 py-3 rounded-lg transition
-         {{#if (eq active 'profile')}} bg-slate-800 text-teal-400 {{else}} hover:bg-slate-800 {{/if}}">
-        <!-- User Icon -->
-        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.5"
-          viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round"
-            d="M15.75 6.75a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.5 20.25a8.25 8.25 0 0115 0" />
-        </svg>
-        <span>Profile</span>
-      </a>
-
+        <a href="/user/profile" class="nav-link {{#if (eq active 'profile')}}active{{/if}}">
+          <i data-lucide="user-circle"></i>
+          <span>Profile</span>
+        </a>
+      </div>
     </nav>
-
   </div>
 
-  <!-- Bottom Section -->
-  <div class="px-4 pb-6">
-
-    <div class="bg-slate-800 rounded-lg p-4 flex items-center gap-3 mb-4">
-      <div class="w-10 h-10 rounded-full bg-teal-600 flex items-center justify-center text-white font-semibold">
+  <!-- Bottom Section - User Info & Sign Out -->
+  <div class="sidebar-user">
+    <div class="user-info-card">
+      <div class="user-avatar">
+        {{#if user.initials}}
         {{user.initials}}
+        {{else}}
+        U
+        {{/if}}
       </div>
-      <div>
-        <p class="text-white font-medium text-sm">{{user.name}}</p>
-        <p class="text-slate-400 text-xs">{{user.role}}</p>
+      <div class="user-details">
+        <div class="user-name">{{#if user.name}}{{user.name}}{{else}}User{{/if}}</div>
+        <div class="user-role">{{#if user.role}}{{user.role}}{{else}}Consumer{{/if}}</div>
       </div>
     </div>
 
-    <a href="/logout" class="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-slate-800 transition">
-      <!-- Logout Icon -->
-      <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.5"
-        viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round"
-          d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6A2.25 2.25 0 005.25 5.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15M18 12h-9m0 0l3-3m-3 3l3 3" />
-      </svg>
+    <button type="button" class="logout-link" id="logoutButton">
+      <i data-lucide="log-out"></i>
       <span>Sign Out</span>
-    </a>
-
+    </button>
   </div>
-
 </aside>
+
+<!-- Logout Confirmation Modal -->
+<div class="modal-overlay" id="logoutModal">
+  <div class="modal-container">
+    <div class="modal-icon">
+      <i data-lucide="log-out"></i>
+    </div>
+    <h2 class="modal-title">Confirm Logout</h2>
+    <p class="modal-message">Are you sure you want to sign out?</p>
+    <div class="modal-actions">
+      <button type="button" class="modal-btn modal-btn-cancel" id="cancelLogout">
+        Cancel
+      </button>
+      <button type="button" class="modal-btn modal-btn-confirm" id="confirmLogout">
+        Sign Out
+      </button>
+    </div>
+  </div>
+</div>
+
+<style>
+  /* Modal Styles */
+  .modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(15, 23, 42, 0.75);
+    backdrop-filter: blur(4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s ease, visibility 0.3s ease;
+  }
+
+  .modal-overlay.show {
+    opacity: 1;
+    visibility: visible;
+  }
+
+  .modal-container {
+    background: white;
+    border-radius: 16px;
+    padding: 2rem;
+    max-width: 400px;
+    width: 90%;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    transform: scale(0.9) translateY(20px);
+    transition: transform 0.3s ease;
+  }
+
+  .modal-overlay.show .modal-container {
+    transform: scale(1) translateY(0);
+  }
+
+  .modal-icon {
+    width: 64px;
+    height: 64px;
+    margin: 0 auto 1.5rem;
+    background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+  }
+
+  .modal-icon i {
+    width: 32px;
+    height: 32px;
+  }
+
+  .modal-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #0f172a;
+    text-align: center;
+    margin-bottom: 0.75rem;
+  }
+
+  .modal-message {
+    font-size: 1rem;
+    color: #64748b;
+    text-align: center;
+    margin-bottom: 2rem;
+    line-height: 1.6;
+  }
+
+  .modal-actions {
+    display: flex;
+    gap: 1rem;
+  }
+
+  .modal-btn {
+    flex: 1;
+    padding: 0.875rem 1.5rem;
+    border-radius: 10px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: none;
+    font-family: 'DM Sans', sans-serif;
+  }
+
+  .modal-btn-cancel {
+    background: #f1f5f9;
+    color: #64748b;
+  }
+
+  .modal-btn-cancel:hover {
+    background: #e2e8f0;
+    color: #475569;
+  }
+
+  .modal-btn-confirm {
+    background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+    color: white;
+  }
+
+  .modal-btn-confirm:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(239, 68, 68, 0.4);
+  }
+
+  /* Update logout button to look like a button */
+  .logout-link {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.875rem 1rem;
+    color: #64748b;
+    text-decoration: none;
+    border-radius: 10px;
+    transition: all 0.2s ease;
+    cursor: pointer;
+    background: transparent;
+    border: none;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.95rem;
+    width: 100%;
+    text-align: left;
+  }
+
+  .logout-link:hover {
+    background: rgba(239, 68, 68, 0.1);
+    color: #ef4444;
+  }
+
+  .logout-link i {
+    width: 20px;
+    height: 20px;
+  }
+</style>
+
+<script>
+  // Logout Modal Functionality
+  (function () {
+    const logoutButton = document.getElementById('logoutButton');
+    const logoutModal = document.getElementById('logoutModal');
+    const cancelLogout = document.getElementById('cancelLogout');
+    const confirmLogout = document.getElementById('confirmLogout');
+
+    // Show modal
+    logoutButton.addEventListener('click', function (e) {
+      e.preventDefault();
+      logoutModal.classList.add('show');
+    });
+
+    // Hide modal
+    function hideModal() {
+      logoutModal.classList.remove('show');
+    }
+
+    // Cancel logout
+    cancelLogout.addEventListener('click', hideModal);
+
+    // Close modal on overlay click
+    logoutModal.addEventListener('click', function (e) {
+      if (e.target === logoutModal) {
+        hideModal();
+      }
+    });
+
+    // Close modal on Escape key
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape' && logoutModal.classList.contains('show')) {
+        hideModal();
+      }
+    });
+
+    // Confirm logout - Redirect to /
+    confirmLogout.addEventListener('click', function () {
+      // You can add a loading state here if needed
+      window.location.href = '/user/logout';
+    });
+  })();
+</script>

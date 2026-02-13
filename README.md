@@ -52,6 +52,7 @@ A smart electricity consumption prediction system using Machine Learning to fore
 ## 🛠️ Tech Stack
 
 ### Backend (Flask - Python)
+
 - **Flask**: Web framework
 - **scikit-learn**: Machine Learning
 - **pandas**: Data processing
@@ -59,11 +60,13 @@ A smart electricity consumption prediction system using Machine Learning to fore
 - **joblib**: Model serialization
 
 ### Controller (Node.js)
+
 - **Express.js**: Web framework
 - **Firebase Admin SDK**: Database
 - **Axios**: HTTP client
 
 ### Machine Learning Models
+
 - **Random Forest Regressor**: Main prediction model
 - **Isolation Forest**: Anomaly detection
 
@@ -72,11 +75,13 @@ A smart electricity consumption prediction system using Machine Learning to fore
 ## 📦 Installation
 
 ### Prerequisites
+
 - Python 3.8+
 - Node.js 14+
 - Firebase project setup
 
 ### 1. Clone Repository
+
 ```bash
 git clone <your-repo-url>
 cd electricity-prediction
@@ -108,6 +113,7 @@ npm install express firebase-admin axios
 ### 4. Add ML Models
 
 Place your trained models in the `models/` directory:
+
 ```
 models/
 ├── rf_model.pkl          # Random Forest model
@@ -117,13 +123,14 @@ models/
 ### 5. Configure Firebase
 
 Create `config/firebase.js`:
+
 ```javascript
-import admin from 'firebase-admin';
-import serviceAccount from './serviceAccountKey.json';
+import admin from "firebase-admin";
+import serviceAccount from "./serviceAccountKey.json";
 
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount),
-  databaseURL: "https://your-project.firebaseio.com"
+  databaseURL: "https://your-project.firebaseio.com",
 });
 
 const db = admin.database();
@@ -135,11 +142,13 @@ export default db;
 ## 🚀 Running the Application
 
 ### Start Flask Server (Port 5000)
+
 ```bash
 python app.py
 ```
 
 ### Start Node.js Server (Your Port)
+
 ```bash
 node server.js  # or npm start
 ```
@@ -149,16 +158,19 @@ node server.js  # or npm start
 ## 📡 API Endpoints
 
 ### 1. Daily Prediction
+
 ```
 GET /api/predict/daily/:userId
 ```
 
 ### 2. Weekly Prediction
+
 ```
 GET /api/predict/weekly/:userId
 ```
 
 ### 3. Monthly Prediction
+
 ```
 GET /api/predict/monthly/:userId
 ```
@@ -168,7 +180,9 @@ GET /api/predict/monthly/:userId
 ## ⚙️ How It Works
 
 ### 1. **Data Collection**
+
 The system fetches historical electricity consumption data from Firebase:
+
 ```javascript
 {
   "date": "2025-02-10",
@@ -177,7 +191,9 @@ The system fetches historical electricity consumption data from Firebase:
 ```
 
 ### 2. **Feature Engineering**
+
 The Flask server creates these features:
+
 - `day_of_week`: 0-6 (Monday-Sunday)
 - `day_of_month`: 1-31
 - `is_weekend`: 0 or 1
@@ -189,15 +205,18 @@ The Flask server creates these features:
 - `long_trend`: Long-term trend (7-day vs 14-day avg)
 
 ### 3. **Prediction**
+
 - Random Forest model predicts next day's consumption
 - For weekly/monthly: Iteratively predicts each day
 - Updates rolling averages after each prediction
 
 ### 4. **Anomaly Detection**
+
 - Isolation Forest checks if current consumption is unusual
 - Returns `anomaly_detected: true/false`
 
 ### 5. **Bill Calculation**
+
 Uses Kerala electricity rates (see below)
 
 ---
@@ -207,16 +226,17 @@ Uses Kerala electricity rates (see below)
 ### Minimum Data Needed
 
 | Prediction Type | Minimum Days | Recommended Days |
-|----------------|-------------|------------------|
-| Daily          | 3 days      | 30 days          |
-| Weekly         | 7 days      | 30 days          |
-| Monthly        | 14 days     | 60 days          |
+| --------------- | ------------ | ---------------- |
+| Daily           | 3 days       | 30 days          |
+| Weekly          | 7 days       | 30 days          |
+| Monthly         | 14 days      | 60 days          |
 
 ### Smart Fallback Logic
 
 The system intelligently handles limited data:
 
 **Daily Prediction:**
+
 ```
 ≥30 days → Use 30 (HIGH confidence)
 ≥14 days → Use 14 (MEDIUM confidence)
@@ -226,6 +246,7 @@ The system intelligently handles limited data:
 ```
 
 **Weekly Prediction:**
+
 ```
 ≥30 days → Use 30 (HIGH confidence)
 ≥21 days → Use 21 (GOOD confidence)
@@ -235,6 +256,7 @@ The system intelligently handles limited data:
 ```
 
 **Monthly Prediction:**
+
 ```
 ≥60 days → Use 60 (HIGH confidence)
 ≥45 days → Use 45 (GOOD confidence)
@@ -252,11 +274,12 @@ The system intelligently handles limited data:
 
 **Input:** Historical consumption data  
 **Output:**
+
 ```json
 {
   "prediction_type": "daily",
   "next_day_units": 12.34,
-  "predicted_2month_bill": 2468.00,
+  "predicted_2month_bill": 2468.0,
   "anomaly_detected": false,
   "confidence": "high",
   "data_days": 35,
@@ -267,6 +290,7 @@ The system intelligently handles limited data:
 ### 2. Weekly Prediction (7 Days)
 
 **Output:**
+
 ```json
 {
   "prediction_type": "weekly",
@@ -278,7 +302,7 @@ The system intelligently handles limited data:
         "date": "2025-02-13",
         "day_name": "Thursday",
         "predicted_units": 11.5
-      },
+      }
       // ... 6 more days
     ],
     "total_weekly_units": 85.6,
@@ -286,7 +310,7 @@ The system intelligently handles limited data:
     "start_date": "2025-02-13",
     "end_date": "2025-02-19"
   },
-  "predicted_2month_bill": 2934.00,
+  "predicted_2month_bill": 2934.0,
   "anomaly_detected": false,
   "confidence": "high",
   "data_days": 30,
@@ -297,6 +321,7 @@ The system intelligently handles limited data:
 ### 3. Monthly Prediction (30 Days)
 
 **Output:**
+
 ```json
 {
   "prediction_type": "monthly",
@@ -312,7 +337,7 @@ The system intelligently handles limited data:
         "avg_daily_units": 12.23,
         "start_date": "2025-02-13",
         "end_date": "2025-02-19"
-      },
+      }
       // ... 3 more weeks
     ],
     "total_monthly_units": 367.2,
@@ -320,8 +345,8 @@ The system intelligently handles limited data:
     "start_date": "2025-02-13",
     "end_date": "2025-03-14"
   },
-  "predicted_monthly_bill": 2458.40,
-  "predicted_2month_bill": 2937.60,
+  "predicted_monthly_bill": 2458.4,
+  "predicted_2month_bill": 2937.6,
   "anomaly_detected": false,
   "confidence": "medium",
   "data_days": 28,
@@ -335,14 +360,15 @@ The system intelligently handles limited data:
 
 The system automatically assesses prediction quality:
 
-| Confidence | Data Days | Description | Action |
-|-----------|-----------|-------------|--------|
-| **HIGH** | 30+ days | Excellent prediction quality | ✅ Use confidently |
-| **MEDIUM** | 14-29 days | Good prediction quality | ⚠️ Minor warning shown |
-| **LOW** | 7-13 days (weekly)<br>3-13 days (daily)<br>14-29 days (monthly) | Acceptable but less accurate | ⚠️ Clear warning shown |
-| **VERY LOW** | 3-6 days (daily only) | Minimal accuracy | ⚠️ Strong warning shown |
+| Confidence   | Data Days                                                       | Description                  | Action                  |
+| ------------ | --------------------------------------------------------------- | ---------------------------- | ----------------------- |
+| **HIGH**     | 30+ days                                                        | Excellent prediction quality | ✅ Use confidently      |
+| **MEDIUM**   | 14-29 days                                                      | Good prediction quality      | ⚠️ Minor warning shown  |
+| **LOW**      | 7-13 days (weekly)<br>3-13 days (daily)<br>14-29 days (monthly) | Acceptable but less accurate | ⚠️ Clear warning shown  |
+| **VERY LOW** | 3-6 days (daily only)                                           | Minimal accuracy             | ⚠️ Strong warning shown |
 
 ### Confidence Response Fields
+
 ```json
 {
   "confidence": "medium",
@@ -372,16 +398,17 @@ def calculate_kerala_bill(units):
 
 ### Rate Slabs
 
-| Units Range | Rate (₹/unit) | Calculation |
-|------------|---------------|-------------|
-| 0-100 | ₹4 | units × 4 |
-| 101-200 | ₹6 | 400 + (units-100) × 6 |
-| 201-300 | ₹7 | 1000 + (units-200) × 7 |
-| 301+ | ₹8 | 1700 + (units-300) × 8 |
+| Units Range | Rate (₹/unit) | Calculation            |
+| ----------- | ------------- | ---------------------- |
+| 0-100       | ₹4            | units × 4              |
+| 101-200     | ₹6            | 400 + (units-100) × 6  |
+| 201-300     | ₹7            | 1000 + (units-200) × 7 |
+| 301+        | ₹8            | 1700 + (units-300) × 8 |
 
 ### Example Calculations
 
 **Example 1:** 150 units
+
 ```
 First 100 units: 100 × ₹4 = ₹400
 Next 50 units:   50 × ₹6 = ₹300
@@ -389,6 +416,7 @@ Total: ₹700
 ```
 
 **Example 2:** 367 units (monthly total)
+
 ```
 First 100 units: 100 × ₹4 = ₹400
 Next 100 units:  100 × ₹6 = ₹600
@@ -404,17 +432,20 @@ Total: ₹2,236
 ### Example 1: User with 35 Days of Data
 
 **Request:**
+
 ```javascript
-GET /api/predict/weekly/user123
+GET / api / predict / weekly / user123;
 ```
 
 **Controller Logic:**
+
 ```javascript
 // User has 35 days → Uses 30 days
-daysUsed = 30
+daysUsed = 30;
 ```
 
 **Flask Response:**
+
 ```json
 {
   "prediction_type": "weekly",
@@ -423,7 +454,7 @@ daysUsed = 30
     "total_weekly_units": 87.5,
     "avg_daily_units": 12.5
   },
-  "predicted_2month_bill": 3000.00,
+  "predicted_2month_bill": 3000.0,
   "confidence": "high",
   "data_days": 30,
   "warning": null
@@ -433,17 +464,20 @@ daysUsed = 30
 ### Example 2: User with 18 Days of Data
 
 **Request:**
+
 ```javascript
-GET /api/predict/monthly/user456
+GET / api / predict / monthly / user456;
 ```
 
 **Controller Logic:**
+
 ```javascript
 // User has 18 days → Uses ALL 18 days
-daysUsed = 18
+daysUsed = 18;
 ```
 
 **Flask Response:**
+
 ```json
 {
   "prediction_type": "monthly",
@@ -456,11 +490,13 @@ daysUsed = 18
 ### Example 3: User with Only 5 Days of Data
 
 **Request:**
+
 ```javascript
-GET /api/predict/weekly/user789
+GET / api / predict / weekly / user789;
 ```
 
 **Controller Response:**
+
 ```json
 {
   "message": "Not enough data for weekly prediction (minimum 7 days required)",
@@ -479,10 +515,12 @@ GET /api/predict/weekly/user789
 **Problem:** Date format not recognized
 
 **Solution:** Ensure dates are in one of these formats:
+
 - `2025-02-12` (ISO format)
 - `2025-02-12T10:30:00Z` (ISO8601 with time)
 
 **Firebase Data Format:**
+
 ```javascript
 {
   "date": "2025-02-12",  // ✅ Correct
@@ -495,15 +533,17 @@ GET /api/predict/weekly/user789
 **Problem:** Insufficient historical data
 
 **Solution:** Collect more data based on prediction type:
+
 - Daily: Minimum 3 days
-- Weekly: Minimum 7 days  
+- Weekly: Minimum 7 days
 - Monthly: Minimum 14 days
 
 #### 3. **Low Confidence Warnings**
 
 **Problem:** Prediction quality is low due to limited data
 
-**Solution:** 
+**Solution:**
+
 - Continue collecting data for better predictions
 - Display warning to user
 - Use predictions cautiously
@@ -513,6 +553,7 @@ GET /api/predict/weekly/user789
 **Problem:** Missing `rf_model.pkl` or `anomaly_model.pkl`
 
 **Solution:**
+
 ```bash
 # Ensure files exist
 ls models/
@@ -526,6 +567,7 @@ ls models/
 **Problem:** Flask server not running
 
 **Solution:**
+
 ```bash
 # Start Flask server
 python app.py
@@ -604,28 +646,6 @@ curl http://localhost:5000/
 - [ ] Cost optimization suggestions
 - [ ] Comparative analysis (vs neighbors)
 - [ ] Carbon footprint calculation
-
----
-
-## 📄 License
-
-[Your License Here]
-
----
-
-## 👥 Contributors
-
-[Your Name/Team]
-
----
-
-## 📞 Support
-
-For issues or questions:
-- Email: your-email@example.com
-- GitHub Issues: [Your Repo URL]
-
----
 
 ## 🙏 Acknowledgments
 

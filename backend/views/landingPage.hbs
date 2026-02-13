@@ -4,149 +4,569 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>{{title}}</title>
-
-  <!-- Google Font -->
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-
-  <!-- Tailwind CDN -->
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <title>EnergyGuard - Smart Energy Monitoring</title>
+  <link rel="stylesheet" href="/css/common.css">
+  <script src="https://unpkg.com/lucide@latest"></script>
 
   <style>
-    body {
-      font-family: 'Inter', sans-serif;
+    /* Landing page specific styles */
+    .hero-section {
+      padding: 4rem 2rem;
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    .hero-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 4rem;
+      align-items: center;
+    }
+
+    .hero-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: rgba(16, 185, 129, 0.1);
+      color: var(--accent-green);
+      padding: 0.5rem 1.25rem;
+      border-radius: 999px;
+      font-size: 0.875rem;
+      font-weight: 600;
+      margin-bottom: 1.5rem;
+    }
+
+    .hero-title {
+      font-size: 3.5rem;
+      font-weight: 800;
+      line-height: 1.1;
+      margin-bottom: 1.5rem;
+      color: var(--text-primary);
+    }
+
+    .hero-highlight {
+      background: linear-gradient(135deg, var(--accent-blue) 0%, var(--accent-green) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .hero-description {
+      font-size: 1.125rem;
+      color: var(--text-secondary);
+      margin-bottom: 2rem;
+      max-width: 600px;
+      line-height: 1.7;
+    }
+
+    .hero-buttons {
+      display: flex;
+      gap: 1rem;
+      margin-bottom: 2rem;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, var(--accent-blue) 0%, var(--accent-indigo) 100%);
+      color: white;
+      padding: 1rem 2rem;
+      border-radius: 999px;
+      font-weight: 600;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(59, 130, 246, 0.4);
+    }
+
+    .btn-secondary {
+      background: var(--bg-card);
+      color: var(--text-primary);
+      padding: 1rem 2rem;
+      border-radius: 999px;
+      font-weight: 600;
+      text-decoration: none;
+      border: 1px solid var(--border);
+      transition: all 0.2s ease;
+    }
+
+    .btn-secondary:hover {
+      background: var(--bg-secondary);
+    }
+
+    .hero-features {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+
+    .feature-item {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      color: var(--text-secondary);
+      font-size: 1rem;
+    }
+
+    .feature-item svg {
+      width: 20px;
+      height: 20px;
+      color: var(--accent-green);
+    }
+
+    /* Dashboard Mockup Container */
+    .dashboard-mock {
+      background: var(--bg-card);
+      border-radius: 16px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+      overflow: hidden;
+      animation: float 6s ease-in-out infinite;
+      border: 1px solid var(--border);
+    }
+
+    @keyframes float {
+
+      0%,
+      100% {
+        transform: translateY(0px);
+      }
+
+      50% {
+        transform: translateY(-10px);
+      }
+    }
+
+    /* Mock Window Header */
+    .mock-header {
+      background: var(--bg-secondary);
+      padding: 1rem;
+      display: flex;
+      gap: 0.5rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .mock-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    /* Mock Chart */
+    .mock-chart {
+      padding: 2rem;
+      background: var(--bg-card);
+    }
+
+    .mock-chart svg {
+      width: 100%;
+      height: auto;
+      filter: drop-shadow(0 4px 12px rgba(59, 130, 246, 0.2));
+    }
+
+    /* Mock Stats */
+    .mock-stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 1.5rem;
+      padding: 2rem;
+      background: var(--bg-card);
+    }
+
+    .mock-stat {
+      text-align: center;
+      padding: 1.5rem 1rem;
+      background: var(--bg-secondary);
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      transition: all 0.3s ease;
+    }
+
+    .mock-stat:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 8px 20px rgba(59, 130, 246, 0.15);
+      border-color: var(--accent-blue);
+    }
+
+    .mock-stat-icon {
+      width: 48px;
+      height: 48px;
+      margin: 0 auto 1rem;
+      background: linear-gradient(135deg, var(--accent-blue) 0%, var(--accent-indigo) 100%);
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+    }
+
+    .mock-stat-icon svg {
+      width: 24px;
+      height: 24px;
+    }
+
+    .mock-stat-value {
+      font-size: 1.75rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin-bottom: 0.5rem;
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    .mock-stat-label {
+      font-size: 0.875rem;
+      color: var(--text-secondary);
+      font-weight: 500;
+    }
+
+    /* Features Section */
+    .features-section {
+      background: var(--bg-secondary);
+      padding: 5rem 2rem;
+      text-align: center;
+    }
+
+    .features-title {
+      font-size: 2.5rem;
+      font-weight: 700;
+      margin-bottom: 1rem;
+    }
+
+    .features-description {
+      color: var(--text-secondary);
+      margin-bottom: 3rem;
+      max-width: 700px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 2rem;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .feature-card {
+      background: var(--bg-card);
+      padding: 2.5rem;
+      border-radius: 1.5rem;
+      box-shadow: var(--shadow-sm);
+      border: 1px solid var(--border);
+      transition: all 0.3s ease;
+    }
+
+    .feature-card:hover {
+      transform: translateY(-8px);
+      box-shadow: var(--shadow-lg);
+    }
+
+    .feature-card-icon {
+      width: 56px;
+      height: 56px;
+      background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(16, 185, 129, 0.1) 100%);
+      border-radius: 1rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 1.5rem;
+    }
+
+    .feature-card-icon svg {
+      width: 28px;
+      height: 28px;
+      color: var(--accent-blue);
+    }
+
+    .feature-card h3 {
+      font-size: 1.25rem;
+      font-weight: 600;
+      margin-bottom: 0.75rem;
+    }
+
+    .feature-card p {
+      color: var(--text-secondary);
+      font-size: 0.95rem;
+      line-height: 1.6;
+    }
+
+    /* Navbar */
+    .navbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1.5rem 2rem;
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    .navbar-brand {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      text-decoration: none;
+      color: var(--text-primary);
+    }
+
+    .navbar-logo {
+      width: 44px;
+      height: 44px;
+      background: linear-gradient(135deg, var(--accent-blue) 0%, var(--accent-indigo) 100%);
+      border-radius: 0.75rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+    }
+
+    .navbar-logo svg {
+      width: 24px;
+      height: 24px;
+    }
+
+    .navbar-name {
+      font-size: 1.25rem;
+      font-weight: 700;
+    }
+
+    .navbar-links {
+      display: flex;
+      align-items: center;
+      gap: 1.5rem;
+    }
+
+    .navbar-link {
+      color: var(--text-secondary);
+      text-decoration: none;
+      font-weight: 500;
+      transition: color 0.2s ease;
+    }
+
+    .navbar-link:hover {
+      color: var(--text-primary);
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      .hero-grid {
+        grid-template-columns: 1fr;
+        gap: 2rem;
+      }
+
+      .hero-title {
+        font-size: 2.5rem;
+      }
+
+      .features-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .mock-stats {
+        grid-template-columns: 1fr;
+      }
+
+      .mock-chart {
+        padding: 1.5rem;
+      }
     }
   </style>
 </head>
 
-<body class="bg-gradient-to-b from-slate-100 to-white text-slate-800"></body>
-<!-- NAVBAR -->
-<header class="flex justify-between items-center px-10 py-6">
-  <div class="flex items-center gap-2">
-    <div class="bg-teal-500 text-white p-2 rounded-lg">
-      ⚡
-    </div>
-    <h1 class="font-semibold text-lg">EnergyGuard</h1>
-  </div>
+<body>
 
-  <div class="flex items-center gap-6">
-    <a href="user/login" class="text-sm text-slate-600 hover:text-black">Log in</a>
-    <a href="user/register" class="bg-slate-900 text-white px-5 py-2 rounded-full text-sm shadow-md hover:opacity-90">
-      Get Started
+  <!-- NAVBAR -->
+  <header class="navbar">
+    <a href="/" class="navbar-brand">
+      <div class="navbar-logo">
+        <i data-lucide="zap"></i>
+      </div>
+      <span class="navbar-name">EnergyGuard</span>
     </a>
-  </div>
-</header>
 
+    <div class="navbar-links">
+      <a href="/user/login" class="navbar-link">Log in</a>
+      <a href="/user/register" class="btn-primary">
+        Get Started
+        <i data-lucide="arrow-right" style="width: 16px; height: 16px;"></i>
+      </a>
+    </div>
+  </header>
 
-<!-- HERO -->
-<section class="px-10 py-20 grid md:grid-cols-2 gap-12 items-center">
+  <!-- HERO -->
+  <section class="hero-section">
+    <div class="hero-grid">
+      <div>
+        <div class="hero-badge">
+          <i data-lucide="activity" style="width: 16px; height: 16px;"></i>
+          Live Energy Monitoring
+        </div>
 
-  <div>
-    <span class="inline-block bg-teal-100 text-teal-700 px-4 py-1 rounded-full text-sm mb-6">
-      ● Live Energy Monitoring
-    </span>
+        <h1 class="hero-title">
+          Smart energy insights for
+          <span class="hero-highlight">modern facilities</span>
+        </h1>
 
-    <h2 class="text-5xl font-extrabold leading-tight mb-6">
-      Smart energy insights for
-      <span class="text-teal-600">modern facilities</span>
-    </h2>
+        <p class="hero-description">
+          Monitor consumption, predict trends, and detect anomalies in real-time.
+          Cut costs and carbon footprint with AI-powered analytics.
+        </p>
 
-    <p class="text-lg text-slate-600 mb-8 max-w-xl">
-      Monitor consumption, predict trends, and detect anomalies in real-time.
-      Cut costs and carbon footprint with AI-powered analytics.
+        <div class="hero-buttons">
+          <a href="/user/register" class="btn-primary">
+            Start Monitoring Free
+            <i data-lucide="arrow-right" style="width: 20px; height: 20px;"></i>
+          </a>
+          <!-- <a href="#features" class="btn-secondary">View Demo</a> -->
+        </div>
+
+        <div class="hero-features">
+          <div class="feature-item">
+            <i data-lucide="check-circle"></i>
+            <span>Real-time power usage tracking</span>
+          </div>
+          <div class="feature-item">
+            <i data-lucide="check-circle"></i>
+            <span>AI-driven anomaly detection</span>
+          </div>
+          <div class="feature-item">
+            <i data-lucide="check-circle"></i>
+            <span>Predictive cost analysis</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- DASHBOARD MOCKUP SECTION -->
+      <div class="dashboard-mock">
+        <!-- Mock Window Header -->
+        <div class="mock-header">
+          <div class="mock-dot" style="background: #ef4444;"></div>
+          <div class="mock-dot" style="background: #fbbf24;"></div>
+          <div class="mock-dot" style="background: #10b981;"></div>
+        </div>
+
+        <!-- Animated Chart -->
+        <div class="mock-chart">
+          <svg viewBox="0 0 400 160" xmlns="http://www.w3.org/2000/svg">
+            <!-- Grid Lines -->
+            <line x1="0" y1="40" x2="400" y2="40" stroke="currentColor" stroke-width="1" opacity="0.2" />
+            <line x1="0" y1="80" x2="400" y2="80" stroke="currentColor" stroke-width="1" opacity="0.2" />
+            <line x1="0" y1="120" x2="400" y2="120" stroke="currentColor" stroke-width="1" opacity="0.2" />
+
+            <!-- Animated Line Chart -->
+            <path id="chartPath" d="M 0 120 L 50 100 L 100 80 L 150 90 L 200 60 L 250 70 L 300 40 L 350 50 L 400 30"
+              fill="none" stroke="url(#gradient)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+              <animate attributeName="stroke-dasharray" values="0 1000; 1000 0" dur="2s" repeatCount="indefinite" />
+            </path>
+
+            <!-- Gradient Fill Under Line -->
+            <path
+              d="M 0 120 L 50 100 L 100 80 L 150 90 L 200 60 L 250 70 L 300 40 L 350 50 L 400 30 L 400 160 L 0 160 Z"
+              fill="url(#areaGradient)" opacity="0.3" />
+
+            <!-- Animated Data Points -->
+            <circle cx="0" cy="120" r="4" fill="#3b82f6">
+              <animate attributeName="cy" values="120;100;80;90;60;70;40;50;30" dur="2s" repeatCount="indefinite" />
+              <animate attributeName="cx" values="0;50;100;150;200;250;300;350;400" dur="2s" repeatCount="indefinite" />
+            </circle>
+
+            <!-- Gradient Definitions -->
+            <defs>
+              <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" style="stop-color:#3b82f6;stop-opacity:1" />
+                <stop offset="50%" style="stop-color:#8b5cf6;stop-opacity:1" />
+                <stop offset="100%" style="stop-color:#ec4899;stop-opacity:1" />
+              </linearGradient>
+
+              <linearGradient id="areaGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                <stop offset="0%" style="stop-color:#3b82f6;stop-opacity:0.5" />
+                <stop offset="100%" style="stop-color:#3b82f6;stop-opacity:0" />
+              </linearGradient>
+            </defs>
+          </svg>
+        </div>
+
+        <!-- Stats Section with Icons -->
+        <div class="mock-stats">
+          <div class="mock-stat">
+            <div class="mock-stat-icon">
+              <i data-lucide="zap"></i>
+            </div>
+            <div class="mock-stat-value">245 kW</div>
+            <div class="mock-stat-label">Current Load</div>
+          </div>
+
+          <div class="mock-stat">
+            <div class="mock-stat-icon">
+              <i data-lucide="shield-check"></i>
+            </div>
+            <div class="mock-stat-value">98%</div>
+            <div class="mock-stat-label">System Health</div>
+          </div>
+
+          <div class="mock-stat">
+            <div class="mock-stat-icon">
+              <i data-lucide="trending-up"></i>
+            </div>
+            <div class="mock-stat-value">12.4 kWh</div>
+            <div class="mock-stat-label">Today's Usage</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FEATURES -->
+  <section class="features-section" id="features">
+    <h2 class="features-title">Everything you need to optimize energy</h2>
+    <p class="features-description">
+      Comprehensive tools for facility managers to monitor, analyze,
+      and reduce energy consumption.
     </p>
 
-    <div class="flex gap-4 mb-8">
-      <button class="bg-teal-600 hover:bg-teal-700 text-white px-6 py-3 rounded-full shadow-lg transition">
-        Start Monitoring Free →
-      </button>
-
-      <button class="border border-slate-300 px-6 py-3 rounded-full text-slate-700 hover:bg-slate-100">
-        View Demo
-      </button>
-    </div>
-
-    <ul class="space-y-3 text-slate-600">
-      <li>✔ Real-time power usage tracking</li>
-      <li>✔ AI-driven anomaly detection</li>
-      <li>✔ Predictive cost analysis</li>
-    </ul>
-  </div>
-
-
-  <!-- DASHBOARD MOCK -->
-  <div class="bg-white rounded-2xl shadow-2xl p-6 max-w-lg mx-auto">
-
-    <div class="flex gap-2 mb-4">
-      <div class="w-3 h-3 bg-red-400 rounded-full"></div>
-      <div class="w-3 h-3 bg-yellow-400 rounded-full"></div>
-      <div class="w-3 h-3 bg-green-400 rounded-full"></div>
-    </div>
-
-    <div class="bg-slate-100 h-40 rounded-xl mb-6"></div>
-
-    <div class="grid grid-cols-2 gap-4">
-      <div class="bg-slate-50 p-4 rounded-xl">
-        <div class="text-teal-600 text-xl mb-2">⚡</div>
-        <h3 class="text-2xl font-bold">245 kW</h3>
-        <p class="text-sm text-slate-500">Current Load</p>
+    <div class="features-grid">
+      <div class="feature-card">
+        <div class="feature-card-icon">
+          <i data-lucide="bar-chart-3"></i>
+        </div>
+        <h3>Advanced Analytics</h3>
+        <p>
+          Deep dive into consumption patterns with granular data visualization.
+        </p>
       </div>
 
-      <div class="bg-slate-50 p-4 rounded-xl">
-        <div class="text-green-600 text-xl mb-2">🛡</div>
-        <h3 class="text-2xl font-bold">98%</h3>
-        <p class="text-sm text-slate-500">System Health</p>
+      <div class="feature-card">
+        <div class="feature-card-icon">
+          <i data-lucide="shield-alert"></i>
+        </div>
+        <h3>Anomaly Detection</h3>
+        <p>
+          AI-powered alerts for unusual spikes and equipment malfunctions.
+        </p>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-card-icon">
+          <i data-lucide="zap"></i>
+        </div>
+        <h3>Real-time Monitoring</h3>
+        <p>
+          Live updates on power usage, voltage, and grid stability.
+        </p>
       </div>
     </div>
+  </section>
 
-  </div>
+  <script>
+    lucide.createIcons();
+  </script>
 
-</section>
-
-
-
-<!-- FEATURES -->
-<section class="bg-slate-50 py-20 px-10 text-center">
-
-  <h2 class="text-3xl font-bold mb-4">
-    Everything you need to optimize energy
-  </h2>
-
-  <p class="text-slate-600 mb-16 max-w-2xl mx-auto">
-    Comprehensive tools for facility managers to monitor, analyze,
-    and reduce energy consumption.
-  </p>
-
-  <div class="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
-
-    <div class="bg-white p-8 rounded-2xl shadow-md">
-      <div class="text-teal-600 text-2xl mb-4">📊</div>
-      <h3 class="font-semibold text-lg mb-2">Advanced Analytics</h3>
-      <p class="text-slate-600 text-sm">
-        Deep dive into consumption patterns with granular data visualization.
-      </p>
-    </div>
-
-    <div class="bg-white p-8 rounded-2xl shadow-md">
-      <div class="text-teal-600 text-2xl mb-4">🛡</div>
-      <h3 class="font-semibold text-lg mb-2">Anomaly Detection</h3>
-      <p class="text-slate-600 text-sm">
-        AI-powered alerts for unusual spikes and equipment malfunctions.
-      </p>
-    </div>
-
-    <div class="bg-white p-8 rounded-2xl shadow-md">
-      <div class="text-teal-600 text-2xl mb-4">⚡</div>
-      <h3 class="font-semibold text-lg mb-2">Real-time Monitoring</h3>
-      <p class="text-slate-600 text-sm">
-        Live updates on power usage, voltage, and grid stability.
-      </p>
-    </div>
-
-  </div>
-
-</section>
 </body>
 
 </html>

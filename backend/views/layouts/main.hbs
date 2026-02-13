@@ -4,35 +4,62 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>{{title}}</title>
+  <title>{{title}} - EnergyGuard</title>
+  <link rel="stylesheet" href="/css/common.css">
 
   <!-- Google Font -->
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link
+    href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap"
+    rel="stylesheet">
 
-  <!-- Tailwind CDN -->
-  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Chart.js -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <!-- Lucide Icons (REQUIRED for sidebar) -->
+  <script src="https://unpkg.com/lucide@latest"></script>
 
   <style>
     body {
-      font-family: 'Inter', sans-serif;
+      font-family: 'DM Sans', sans-serif;
+      margin: 0;
+      padding: 0;
+    }
+
+    /* Main content area - add left margin for sidebar */
+    .main-content {
+      margin-left: 280px;
+      min-height: 100vh;
+      padding: 0;
+      background: var(--bg-primary);
+    }
+
+    /* Remove default container padding since we're using main-content */
+    .main-content .container {
+      max-width: none;
+      padding: 2rem;
+    }
+
+    @media (max-width: 768px) {
+      .main-content {
+        margin-left: 0;
+      }
     }
   </style>
 </head>
 
-<body class="bg-gradient-to-b from-slate-100 to-white text-slate-800">
-  <div class="flex min-h-screen">
+<body>
+  <!-- Sidebar -->
+  {{> user-sidebar}}
 
-    <!-- Sidebar -->
-    {{> user-sidebar}}
-
-    <!-- Main Content -->
-    <main class="flex-1 p-6">
-      {{{body}}}
-    </main>
-
+  <!-- Main Content with proper margin -->
+  <div class="main-content">
+    {{{body}}}
   </div>
-</body>
 
+  <!-- Initialize Lucide Icons (REQUIRED) -->
+  <script>
+    lucide.createIcons();
+  </script>
+</body>
 
 </html>

@@ -63,6 +63,51 @@ app.engine(
       eq: function (a, b) {
         return a === b;
       },
+      getConfidencePercent: function (confidence) {
+        const percentages = {
+          high: 95,
+          medium: 75,
+          low: 50,
+        };
+        return percentages[confidence] || 50;
+      },
+      ifEquals: (a, b, options) => {
+        return a === b ? options.fn(this) : options.inverse(this);
+      },
+      countSeverity: (alerts, level) => {
+        return alerts.filter((alert) => alert.severity === level).length;
+      }, // Count items by a specific property value
+      countBy: function (array, property, value) {
+        if (!Array.isArray(array)) return 0;
+        return array.filter((item) => item[property] === value).length;
+      },
+
+      // Format date/timestamp
+      formatDate: function (timestamp) {
+        if (!timestamp) return "";
+        const date = new Date(timestamp);
+        return date.toLocaleString("en-IN", {
+          year: "numeric",
+          month: "short",
+          day: "numeric",
+          hour: "2-digit",
+          minute: "2-digit",
+        });
+      },
+
+      // Check if array has items
+      hasItems: function (array) {
+        return Array.isArray(array) && array.length > 0;
+      }, // Convert string to lowercase
+      toLowerCase: function (str) {
+        if (!str) return "";
+        return str.toLowerCase();
+      },
+      // Get substring (for initials)
+      substring: function (str, start, end) {
+        if (!str) return "";
+        return str.substring(start, end).toUpperCase();
+      },
     },
   }),
 );
@@ -104,11 +149,18 @@ app.use((req, res) => {
 
 // Global error handler
 app.use((err, req, res, next) => {
-  console.error("Error:", err);
-  res.status(err.status || 500).render("error", {
-    title: "Error",
+  // Log error details
+  console.error("❌ Server Error:", {
+    message: err.message,
+    stack: err.stack,
+    url: req.url,
+    method: req.method,
+    timestamp: new Date().toISOString(),
+  });
+
+  res.status(500).render("500", {
+    title: "Page Not Found",
     layout: false,
-    error: process.env.NODE_ENV === "development" ? err : {},
   });
 });
 

@@ -11,10 +11,12 @@ import {
   verifyUser,
   registerPage,
   predictPage,
+  profilePage,
   dashboardController,
+  logoutController,
+  alertController,
   allReadingController,
   dailyUseage,
-  alertController,
   predictNextDay,
   predictNextWeek,
   predictNextMonth,
@@ -30,38 +32,41 @@ router.post("/login", verifyUser);
 
 router.get("/register", registerPage);
 router.get("/dashboard", dashboardController);
-router.get("/predictions", predictPage);
 
+router.get("/predictions", predictPage);
+router.get("/alerts", alertController);
+router.get("/profile", profilePage);
+router.get("/logout", logoutController);
 // router.get("/dashboard/:userId", dashboardController);
 // router.get("/api/readings/:userId", allReadingController);
 
-router.get("/api/daily-summary/:userId", dailyUseage);
-router.get("/api/alerts/:userId", alertController);
-router.get("/api/predict/next-day/:userId", predictNextDay);
-router.get("/api/predict/next-week/:userId", predictNextWeek);
-router.get("/api/predict/next-month/:userId", predictNextMonth);
+// router.get("/api/daily-summary/:userId", dailyUseage);
+// router.get("/api/alerts/:userId", alertController);
+// router.get("/api/predict/next-day/:userId", predictNextDay);
+// router.get("/api/predict/next-week/:userId", predictNextWeek);
+// router.get("/api/predict/next-month/:userId", predictNextMonth);
 
 //out
-router.get("/api/readings/:userId/latest", async (req, res) => {
-  const { userId } = req.params;
+// router.get("/api/readings/:userId/latest", async (req, res) => {
+//   const { userId } = req.params;
 
-  try {
-    const ref = db.ref(`latest_readings/${userId}`);
-    const snapshot = await ref.limitToLast(1).once("value");
+//   try {
+//     const ref = db.ref(`latest_readings/${userId}`);
+//     const snapshot = await ref.limitToLast(1).once("value");
 
-    if (!snapshot.exists()) {
-      return res.status(404).json({ message: "No data found" });
-    }
+//     if (!snapshot.exists()) {
+//       return res.status(404).json({ message: "No data found" });
+//     }
 
-    let latest;
-    snapshot.forEach((child) => {
-      latest = { id: child.key, ...child.val() };
-    });
-    res.render("user/latest-reading", { reading: latest });
-    // res.status(200).json(latest);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
+//     let latest;
+//     snapshot.forEach((child) => {
+//       latest = { id: child.key, ...child.val() };
+//     });
+//     res.render("user/latest-reading", { reading: latest });
+//     // res.status(200).json(latest);
+//   } catch (err) {
+//     res.status(500).json({ error: err.message });
+//   }
+// });
 
 export default router;
