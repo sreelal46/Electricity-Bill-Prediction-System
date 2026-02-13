@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{{title}}</title>
+
+  <!-- Google Font -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <!-- Tailwind CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+    }
+  </style>
+</head>
+
+<body class="min-h-screen flex items-center justify-center bg-gradient-to-b from-slate-100 to-white text-slate-800">
+
+  <div class="w-full max-w-md text-center">
+
+    <!-- Logo -->
+    <div
+      class="mx-auto mb-6 w-14 h-14 bg-indigo-600 text-white rounded-xl flex items-center justify-center shadow-lg text-xl">
+      🛡
+    </div>
+
+    <h1 class="text-3xl font-bold mb-2">Admin Portal Login</h1>
+    <p class="text-sm text-slate-500 mb-8">
+      Or <a href="/" class="text-indigo-600 hover:underline">return to home page</a>
+    </p>
+
+    <!-- Card -->
+    <div class="bg-white rounded-2xl shadow-xl p-8 text-left">
+
+      <!-- Toggle -->
+      <div class="bg-slate-100 p-1 rounded-lg flex mb-6">
+        <a href="/user/login" class="w-1/2 text-center py-2 rounded-md text-slate-500">
+          User Login
+        </a>
+        <div class="w-1/2 text-center py-2 rounded-md bg-white font-medium shadow text-indigo-600">
+          Admin Login
+        </div>
+      </div>
+
+      <!-- Form -->
+      <form action="admin/login" method="POST">
+
+        <label class="block text-sm font-medium mb-2">Email address</label>
+        <input type="email" name="email"
+          class="w-full mb-4 px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+          placeholder="admin@energyguard.com" required />
+
+        <label class="block text-sm font-medium mb-2">Password</label>
+        <input type="password" name="password"
+          class="w-full mb-4 px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+          placeholder="••••••••" required />
+
+        <div class="flex justify-between items-center mb-6 text-sm">
+          <label class="flex items-center gap-2">
+            <input type="checkbox" />
+            Remember me
+          </label>
+          <a href="#" class="text-indigo-600 hover:underline">Forgot password?</a>
+        </div>
+
+        <button class="w-full bg-indigo-600 text-white py-3 rounded-lg hover:bg-indigo-700 transition">
+          Sign in →
+        </button>
+      </form>
+
+    </div>
+  </div>
+</body>
+
+</html>

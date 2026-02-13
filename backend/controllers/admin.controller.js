@@ -1,5 +1,9 @@
 import db from "../config/firebase.js";
 
+export const loginPage = async (req, res) => {
+  res.status(200).render("admin/login", { layout: false });
+};
+
 export const dashboardController = async (req, res, next) => {
   try {
     // 1️⃣ Get all users

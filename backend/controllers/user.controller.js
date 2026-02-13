@@ -1,22 +1,83 @@
 import db from "../config/firebase.js";
 import axios from "axios";
-export const dashboardController = async (req, res, next) => {
-  const { userId } = req.params;
+
+export const loginPage = (req, res) => {
+  res.status(200).render("user/login", { layout: false });
+};
+
+export const verifyUser = async (req, res, next) => {
+  try {
+    console.log(req.body);
+    req.session.user = { id: "USER001" };
+    res.redirect("/user/dashboard");
+  } catch (error) {}
+};
+
+export const registerPage = (req, res) => {
+  res.status(200).render("user/register", { layout: false });
+};
+export const predictPage = (req, res) => {
+  res.status(200).render("user/predictions");
+};
+export const dashboardController = async (req, res) => {
+  const userId = req.session?.user?.id || "USER001";
 
   try {
-    const userSnap = await db.ref(`users/${userId}`).once("value");
-    const readingSnap = await db.ref(`latest_readings/${userId}`).once("value");
+    /* ===============================
+       GET DAILY TREND (unchanged)
+    =============================== */
+    const dailySnap = await db.ref(`daily_data/${userId}`).once("value");
 
-    if (!userSnap.exists()) {
-      return res.send("<h1>User not found</h1>");
+    const dailyTrend = [];
+
+    if (dailySnap.exists()) {
+      dailySnap.forEach((day) => {
+        dailyTrend.push({
+          id: day.key,
+          ...day.val(),
+        });
+      });
     }
-    const user = userSnap.val();
-    let latestReading = readingSnap.val();
 
-    res.render("user/dashboard", { latestReading, user });
+    dailyTrend.sort((a, b) => new Date(a.date) - new Date(b.date));
+
+    const latestReading =
+      dailyTrend.length > 0 ? dailyTrend[dailyTrend.length - 1] : null;
+
+    /* ===============================
+       🔥 GET TODAY READINGS
+    =============================== */
+
+    const readingSnap = await db.ref(`readings/${userId}`).once("value");
+
+    const todayReadings = [];
+
+    const today = new Date().toISOString().split("T")[0];
+    // format: YYYY-MM-DD
+
+    if (readingSnap.exists()) {
+      readingSnap.forEach((child) => {
+        const reading = child.val();
+
+        if (reading.timestamp.startsWith(today)) {
+          todayReadings.push({
+            id: child.key,
+            ...reading,
+          });
+        }
+      });
+    }
+
+    // Sort by timestamp
+    todayReadings.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+    res.render("user/dashboard", {
+      dailyTrend,
+      latestReading,
+      todayReadings,
+    });
   } catch (err) {
     console.log(err);
-    res.status(500).send(`<pre>${err.message}</pre>`);
+    res.status(500).send(err.message);
   }
 };
 

@@ -1,0 +1,147 @@
+<div class="p-8 bg-slate-100 min-h-screen">
+
+  <!-- Header -->
+  <div class="mb-8">
+    <h1 class="text-3xl font-bold">AI Forecasts</h1>
+    <p class="text-slate-500">
+      Machine learning powered predictions for energy consumption and costs.
+    </p>
+  </div>
+
+
+  <!-- Model Confidence Banner -->
+  <div class="bg-indigo-50 border border-indigo-200 rounded-xl p-6 mb-10">
+    <h2 class="text-lg font-semibold text-indigo-700 mb-2">
+      Model Confidence: High (98%)
+    </h2>
+    <p class="text-indigo-600 text-sm">
+      Our predictive models have analyzed 12 months of historical data and
+      current weather patterns. Predictions are updated every 15 minutes.
+    </p>
+  </div>
+
+
+  <!-- AI Prediction Cards -->
+  <h2 class="text-xl font-bold mb-6">AI Predictions</h2>
+
+  <div class="grid md:grid-cols-3 gap-6 mb-10">
+
+    <!-- Tomorrow -->
+    <div class="bg-white p-6 rounded-xl shadow">
+      <p class="text-sm text-slate-500">Tomorrow's Usage</p>
+      <h3 class="text-2xl font-bold mb-2" id="tomorrowValue"></h3>
+      <p class="text-xs text-indigo-600 mb-4">
+        +85 kWh (98% confidence)
+      </p>
+      <canvas id="spark1" height="80"></canvas>
+    </div>
+
+    <!-- Next Week -->
+    <div class="bg-white p-6 rounded-xl shadow">
+      <p class="text-sm text-slate-500">Next Week Forecast</p>
+      <h3 class="text-2xl font-bold mb-2" id="weekValue"></h3>
+      <p class="text-xs text-indigo-600 mb-4">
+        +85 kWh (98% confidence)
+      </p>
+      <canvas id="spark2" height="80"></canvas>
+    </div>
+
+    <!-- Monthly -->
+    <div class="bg-white p-6 rounded-xl shadow">
+      <p class="text-sm text-slate-500">Monthly Projection</p>
+      <h3 class="text-2xl font-bold mb-2" id="monthValue"></h3>
+      <p class="text-xs text-indigo-600 mb-4">
+        +85 kWh (98% confidence)
+      </p>
+      <canvas id="spark3" height="80"></canvas>
+    </div>
+
+  </div>
+
+
+  <!-- Bottom Two Sections -->
+  <div class="grid md:grid-cols-2 gap-6">
+
+    <!-- Efficiency Opportunities -->
+    <div class="bg-white p-6 rounded-xl shadow">
+      <h3 class="font-semibold mb-4 text-green-600">
+        Efficiency Opportunities
+      </h3>
+      <ul class="space-y-3 text-sm text-slate-600">
+        <li>• Shift HVAC pre-cooling to 5:00 AM to avoid peak rates</li>
+        <li>• Optimize lighting schedules in Sector B based on occupancy</li>
+        <li>• Check capacitor banks — power factor trending lower</li>
+      </ul>
+    </div>
+
+    <!-- Risk Factors -->
+    <div class="bg-white p-6 rounded-xl shadow">
+      <h3 class="font-semibold mb-4 text-yellow-600">
+        Predicted Risk Factors
+      </h3>
+      <ul class="space-y-3 text-sm text-slate-600">
+        <li>• High probability of demand charge exceedance on Thursday</li>
+        <li>• Potential voltage instability during scheduled grid maintenance</li>
+        <li>• Cooling load will increase 15% due to heat wave forecast</li>
+      </ul>
+    </div>
+
+  </div>
+
+</div>
+
+
+
+<script>
+
+  /* -----------------------
+     Dynamic Values
+  ----------------------- */
+
+  const predictions = {
+    tomorrow: 2945,
+    week: 2945,
+    month: 2945
+  };
+
+  document.getElementById("tomorrowValue").innerText =
+    predictions.tomorrow.toLocaleString() + " kWh";
+
+  document.getElementById("weekValue").innerText =
+    predictions.week.toLocaleString() + " kWh";
+
+  document.getElementById("monthValue").innerText =
+    predictions.month.toLocaleString() + " kWh";
+
+
+  /* -----------------------
+     Sparkline Charts
+  ----------------------- */
+
+  function createSparkline(id, data) {
+    new Chart(document.getElementById(id), {
+      type: "line",
+      data: {
+        labels: data.map((_, i) => i),
+        datasets: [{
+          data: data,
+          borderColor: "#6366f1",
+          tension: 0.4,
+          fill: false
+        }]
+      },
+      options: {
+        plugins: { legend: { display: false } },
+        scales: {
+          x: { display: false },
+          y: { display: false }
+        }
+      }
+    });
+  }
+
+  createSparkline("spark1", [2600, 2700, 2550, 2800, 2750, 2900, 2945]);
+  createSparkline("spark2", [2500, 2600, 2550, 2750, 2600, 2850, 2945]);
+  createSparkline("spark3", [2400, 2450, 2500, 2600, 2700, 2900, 2945]);
+
+</script>

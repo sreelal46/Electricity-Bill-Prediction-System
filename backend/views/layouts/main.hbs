@@ -3,14 +3,36 @@
 
 <head>
   <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>{{title}}</title>
 
-  <!-- Global CSS -->
-  <!-- <link rel="stylesheet" href="/css/user-dashboard.css" /> -->
+  <!-- Google Font -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <!-- Tailwind CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+    }
+  </style>
 </head>
 
-<body>
-  {{{body}}}
+<body class="bg-gradient-to-b from-slate-100 to-white text-slate-800">
+  <div class="flex min-h-screen">
+
+    <!-- Sidebar -->
+    {{> user-sidebar}}
+
+    <!-- Main Content -->
+    <main class="flex-1 p-6">
+      {{{body}}}
+    </main>
+
+  </div>
 </body>
+
 
 </html>

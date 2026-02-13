@@ -5,9 +5,12 @@
 // ===================================================================
 
 import express from "express";
-import mlService from "../config/ml.service.js";
 import db from "../config/firebase.js";
 import {
+  loginPage,
+  verifyUser,
+  registerPage,
+  predictPage,
   dashboardController,
   allReadingController,
   dailyUseage,
@@ -21,9 +24,16 @@ const router = express.Router();
 /**
  * USER DASHBOARD PAGE (HTML)
  */
-router.get("/dashboard/:userId", dashboardController);
 
-router.get("/api/readings/:userId", allReadingController);
+router.get("/login", loginPage);
+router.post("/login", verifyUser);
+
+router.get("/register", registerPage);
+router.get("/dashboard", dashboardController);
+router.get("/predictions", predictPage);
+
+// router.get("/dashboard/:userId", dashboardController);
+// router.get("/api/readings/:userId", allReadingController);
 
 router.get("/api/daily-summary/:userId", dailyUseage);
 router.get("/api/alerts/:userId", alertController);

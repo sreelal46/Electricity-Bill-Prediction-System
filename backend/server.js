@@ -8,6 +8,7 @@ import express from "express";
 import path from "path";
 import cors from "cors";
 import { fileURLToPath } from "url";
+import session from "express-session";
 import { engine } from "express-handlebars";
 import userRoutes from "./routes/user.routes.js";
 import adminRoutes from "./routes/admin.routes.js";
@@ -18,6 +19,21 @@ const PORT = process.env.PORT || 8000;
 // Get __dirname in ES modules
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+
+// ============ Session Setup ============
+app.use(
+  session({
+    name: "kseb-session",
+    secret: process.env.SESSION_SECRET || "super-secret-key",
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+      secure: false, // true if using HTTPS
+      httpOnly: true,
+      maxAge: 1000 * 60 * 60 * 2, // 2 hours
+    },
+  }),
+);
 
 // ============ Handlebars Setup ============
 app.engine(
@@ -65,6 +81,9 @@ app.use(express.static(path.join(__dirname, "public")));
 
 // User dashboard routes (HBS views)
 app.get("/", (req, res) => {
+  res.render("landingpage", { layout: false });
+});
+app.get("/home", (req, res) => {
   res.render("home");
 });
 app.use("/user", userRoutes);

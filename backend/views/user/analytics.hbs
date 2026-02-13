@@ -1,0 +1,151 @@
+<div class="p-8 bg-slate-100 min-h-screen">
+
+  <!-- Header -->
+  <div class="flex justify-between items-center mb-8">
+    <div>
+      <h1 class="text-3xl font-bold">Analytics Overview</h1>
+      <p class="text-slate-500">
+        Detailed breakdown of energy consumption patterns.
+      </p>
+    </div>
+
+    <div class="flex gap-3">
+      <button class="bg-white px-4 py-2 rounded-lg shadow text-sm">
+        📅 Last 30 Days
+      </button>
+      <button class="bg-white px-4 py-2 rounded-lg shadow text-sm">
+        ⚙ Filter
+      </button>
+      <button class="bg-slate-900 text-white px-4 py-2 rounded-lg text-sm">
+        ⬇ Export Report
+      </button>
+    </div>
+  </div>
+
+
+  <!-- Top Charts -->
+  <div class="grid md:grid-cols-2 gap-6 mb-8">
+
+    <!-- Daily Trend -->
+    <div class="bg-white p-6 rounded-xl shadow">
+      <h3 class="font-semibold mb-4">Daily Energy Trend</h3>
+      <canvas id="dailyAnalyticsChart"></canvas>
+    </div>
+
+    <!-- Monthly Comparison -->
+    <div class="bg-white p-6 rounded-xl shadow">
+      <h3 class="font-semibold mb-4">Monthly Consumption Comparison</h3>
+      <canvas id="monthlyAnalyticsChart"></canvas>
+    </div>
+
+  </div>
+
+
+  <!-- Load Profile -->
+  <div class="bg-white p-6 rounded-xl shadow mb-8">
+    <h3 class="font-semibold mb-4">Load Profile (Today)</h3>
+    <canvas id="loadAnalyticsChart"></canvas>
+  </div>
+
+
+  <!-- Bottom Stats -->
+  <div class="grid md:grid-cols-3 gap-6">
+
+    <div class="bg-white p-6 rounded-xl shadow">
+      <p class="text-sm text-slate-500">Peak Usage Time</p>
+      <h3 class="text-xl font-bold mt-2">14:00 - 16:00</h3>
+      <p class="text-xs text-slate-400">Daily Average</p>
+    </div>
+
+    <div class="bg-white p-6 rounded-xl shadow">
+      <p class="text-sm text-slate-500">Base Load</p>
+      <h3 class="text-xl font-bold mt-2">125 kW</h3>
+      <p class="text-xs text-slate-400">Minimum continuous draw</p>
+    </div>
+
+    <div class="bg-white p-6 rounded-xl shadow">
+      <p class="text-sm text-slate-500">Power Factor</p>
+      <h3 class="text-xl font-bold mt-2">0.94</h3>
+      <p class="text-xs text-slate-400">Grid efficiency score</p>
+    </div>
+
+  </div>
+
+</div>
+
+
+
+<script>
+
+  /* --------------------------
+     Daily Energy Trend
+  -------------------------- */
+
+  new Chart(document.getElementById("dailyAnalyticsChart"), {
+    type: "bar",
+    data: {
+      labels: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
+      datasets: [{
+        label: "kWh",
+        data: [320, 450, 400, 380, 520, 280, 250],
+        backgroundColor: "#0ea5e9"
+      }]
+    },
+    options: {
+      plugins: { legend: { display: false } },
+      responsive: true
+    }
+  });
+
+
+  /* --------------------------
+     Monthly Comparison
+  -------------------------- */
+
+  new Chart(document.getElementById("monthlyAnalyticsChart"), {
+    type: "bar",
+    data: {
+      labels: ["Week 1", "Week 2", "Week 3", "Week 4"],
+      datasets: [
+        {
+          label: "This Month",
+          data: [1200, 1400, 1100, 1000],
+          backgroundColor: "#14b8a6"
+        },
+        {
+          label: "Last Month",
+          data: [1100, 1500, 1050, 1200],
+          backgroundColor: "#cbd5e1"
+        }
+      ]
+    },
+    options: {
+      responsive: true
+    }
+  });
+
+
+  /* --------------------------
+     Load Profile (Area Chart)
+  -------------------------- */
+
+  new Chart(document.getElementById("loadAnalyticsChart"), {
+    type: "line",
+    data: {
+      labels: ["0:00", "2:00", "4:00", "6:00", "8:00", "10:00", "12:00", "14:00", "16:00", "18:00", "20:00", "22:00"],
+      datasets: [{
+        label: "Load (kW)",
+        data: [340, 220, 300, 290, 450, 680, 410, 600, 520, 470, 390, 260],
+        borderColor: "#0ea5e9",
+        backgroundColor: "rgba(14,165,233,0.2)",
+        fill: true,
+        tension: 0.4
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: { legend: { display: false } }
+    }
+  });
+
+</script>

@@ -8,12 +8,15 @@ import express from "express";
 import db from "../config/firebase.js";
 const router = express.Router();
 import {
+  loginPage,
   dashboardController,
   allUsers,
   latestReadingController,
   dailyUseage,
   allAlert,
 } from "../controllers/admin.controller.js";
+
+router.get("/login", loginPage);
 
 /**
  * GET /admin/dashboard
