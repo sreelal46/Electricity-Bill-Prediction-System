@@ -22,15 +22,15 @@ export const dashboardController = async (req, res) => {
 
   try {
     /* ===============================
-       GET DAILY TREND
+       GET DAILY TREND (LAST 7 DAYS ONLY)
     =============================== */
     const dailySnap = await db.ref(`daily_data/${userId}`).once("value");
 
-    const dailyTrend = [];
+    const allDailyData = [];
 
     if (dailySnap.exists()) {
       dailySnap.forEach((day) => {
-        dailyTrend.push({
+        allDailyData.push({
           id: day.key,
           ...day.val(),
         });
@@ -38,14 +38,17 @@ export const dashboardController = async (req, res) => {
     }
 
     // Sort by date
-    dailyTrend.sort((a, b) => new Date(a.date) - new Date(b.date));
+    allDailyData.sort((a, b) => new Date(a.date) - new Date(b.date));
+
+    // ✅ FIX: Keep only last 7 days
+    const dailyTrend = allDailyData.slice(-7);
 
     // Get latest reading from daily data
     const latestReading =
       dailyTrend.length > 0 ? dailyTrend[dailyTrend.length - 1] : null;
 
     /* ===============================
-       GET TODAY'S READINGS
+       GET TODAY'S READINGS ONLY
     =============================== */
     const readingSnap = await db.ref(`readings/${userId}`).once("value");
 
@@ -56,7 +59,7 @@ export const dashboardController = async (req, res) => {
       readingSnap.forEach((child) => {
         const reading = child.val();
 
-        // Filter readings for today
+        // ✅ FIX: Filter readings for TODAY only
         if (reading.timestamp && reading.timestamp.startsWith(today)) {
           todayReadings.push({
             id: child.key,
@@ -73,12 +76,15 @@ export const dashboardController = async (req, res) => {
       dailyTrendCount: dailyTrend.length,
       todayReadingsCount: todayReadings.length,
       hasLatestReading: !!latestReading,
+      dateRange:
+        dailyTrend.length > 0
+          ? `${dailyTrend[0].date} to ${dailyTrend[dailyTrend.length - 1].date}`
+          : "No data",
+      todayDate: today,
     });
 
     /* ===============================
        RENDER DASHBOARD VIEW
-       For Handlebars, we need to serialize
-       objects to JSON strings
     =============================== */
     res.render("user/dashboard", {
       // Send JSON-stringified data for Handlebars
@@ -87,6 +93,105 @@ export const dashboardController = async (req, res) => {
       todayReadingsJSON: JSON.stringify(todayReadings),
 
       // Also send raw data in case you want to use it directly in HBS
+      dailyTrend,
+      latestReading,
+      todayReadings,
+    });
+  } catch (err) {
+    console.error("❌ Dashboard Error:", err);
+    res.status(500).send(err.message);
+  }
+};
+
+/* ===============================
+   ALTERNATIVE: More efficient query-based approach
+   Use this if you want to filter at database level
+=============================== */
+
+export const dashboardControllerOptimized = async (req, res) => {
+  const userId = req.session?.user?.id || "USER001";
+
+  try {
+    // Calculate date 7 days ago
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+    const startDate = sevenDaysAgo.toISOString().split("T")[0];
+
+    // Today's date
+    const today = new Date().toISOString().split("T")[0];
+
+    /* ===============================
+       GET DAILY TREND (with Firebase query)
+    =============================== */
+    const dailySnap = await db
+      .ref(`daily_data/${userId}`)
+      .orderByChild("date")
+      .startAt(startDate)
+      .once("value");
+
+    const dailyTrend = [];
+
+    if (dailySnap.exists()) {
+      dailySnap.forEach((day) => {
+        dailyTrend.push({
+          id: day.key,
+          ...day.val(),
+        });
+      });
+    }
+
+    // Sort by date
+    dailyTrend.sort((a, b) => new Date(a.date) - new Date(b.date));
+
+    const latestReading =
+      dailyTrend.length > 0 ? dailyTrend[dailyTrend.length - 1] : null;
+
+    /* ===============================
+       GET TODAY'S READINGS (with Firebase query)
+    =============================== */
+    const todayStart = `${today} 00:00:00`;
+    const todayEnd = `${today} 23:59:59`;
+
+    const readingSnap = await db
+      .ref(`readings/${userId}`)
+      .orderByChild("timestamp")
+      .startAt(todayStart)
+      .endAt(todayEnd)
+      .once("value");
+
+    const todayReadings = [];
+
+    if (readingSnap.exists()) {
+      readingSnap.forEach((child) => {
+        todayReadings.push({
+          id: child.key,
+          ...child.val(),
+        });
+      });
+    }
+
+    // Sort by timestamp
+    todayReadings.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+
+    console.log("📊 Dashboard Data Summary (Optimized):", {
+      dailyTrendCount: dailyTrend.length,
+      todayReadingsCount: todayReadings.length,
+      hasLatestReading: !!latestReading,
+      dateRange:
+        dailyTrend.length > 0
+          ? `${dailyTrend[0].date} to ${dailyTrend[dailyTrend.length - 1].date}`
+          : "No data",
+      todayDate: today,
+      queryFiltered: true,
+    });
+
+    /* ===============================
+       RENDER DASHBOARD VIEW
+    =============================== */
+    res.render("user/dashboard", {
+      dailyTrendJSON: JSON.stringify(dailyTrend),
+      latestReadingJSON: JSON.stringify(latestReading),
+      todayReadingsJSON: JSON.stringify(todayReadings),
       dailyTrend,
       latestReading,
       todayReadings,
@@ -391,6 +496,23 @@ export const predictPage = async (req, res, next) => {
   }
 };
 
+// Logout Controller
+export const logoutController = (req, res) => {
+  // Destroy the session
+  // req.session.destroy((err) => {
+  //   if (err) {
+  //     console.error("❌ Logout Error:", err);
+  //     return res.status(500).send("Error logging out");
+  //   }
+
+  //   // Clear the session cookie
+  //   res.clearCookie('connect.sid'); // Default session cookie name
+
+  //   // Redirect to home page
+  res.redirect("/");
+  // });
+};
+
 export const predictNextDay = async (req, res, next) => {
   const { userId } = req.params;
 
@@ -563,20 +685,4 @@ export const predictNextMonth = async (req, res, next) => {
     console.error("Monthly prediction error:", error.message);
     res.status(500).json({ error: "Server error during monthly prediction" });
   }
-};
-// Logout Controller
-export const logoutController = (req, res) => {
-  // Destroy the session
-  // req.session.destroy((err) => {
-  //   if (err) {
-  //     console.error("❌ Logout Error:", err);
-  //     return res.status(500).send("Error logging out");
-  //   }
-
-  //   // Clear the session cookie
-  //   res.clearCookie('connect.sid'); // Default session cookie name
-
-  //   // Redirect to home page
-  res.redirect("/");
-  // });
 };

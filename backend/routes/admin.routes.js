@@ -9,6 +9,8 @@ import db from "../config/firebase.js";
 const router = express.Router();
 import {
   loginPage,
+  verifyUser,
+  registrationPage,
   dashboardController,
   allUsers,
   latestReadingController,
@@ -16,8 +18,15 @@ import {
   allAlert,
 } from "../controllers/admin.controller.js";
 
-router.get("/login", loginPage);
+router.use((req, res, next) => {
+  res.locals.layout = "adminLayout";
+  next();
+});
 
+router.get("/login", loginPage);
+router.post("/login", verifyUser);
+
+router.get("/registration", registrationPage);
 /**
  * GET /admin/dashboard
  */

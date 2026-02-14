@@ -1,0 +1,64 @@
+<link rel="stylesheet" href="/css/admin-dashboard.css">
+
+<div class="admin-page">
+
+  <a href="/" class="back-btn">
+    ← Back to Home
+  </a>
+  <h1>🛠️ Admin Dashboard</h1>
+
+  <!-- Stats Cards -->
+  <div class="stats-grid">
+    <div class="stat-card users">
+      <h3>Total Users</h3>
+      <p>{{totalUsers}}</p>
+    </div>
+
+    <div class="stat-card alerts">
+      <h3>Total Alerts</h3>
+      <p>{{totalAlerts}}</p>
+    </div>
+  </div>
+
+  <!-- Users Table -->
+  <div class="table-card" style="margin-bottom: 50px;">
+    <h2>👥 Registered Users</h2>
+
+    <table>
+      <thead>
+        <tr>
+          <th>User ID</th>
+          <th>Name</th>
+          <th>Phase</th>
+          <th>Approved Load (kW)</th>
+          <th>Status</th>
+          <th>Created At</th>
+        </tr>
+      </thead>
+      <tbody>
+        {{#each users}}
+        <tr>
+          <td>{{user_id}}</td>
+          <td>{{user_name}}</td>
+          <td>{{approved_phase}}</td>
+          <td>{{approved_load_kw}} kW</td>
+          <td>
+            <span class="status {{status}}">
+              {{status}}
+            </span>
+          </td>
+          <td>{{registration_date}}</td>
+        </tr>
+        {{/each}}
+      </tbody>
+    </table>
+  </div>
+  <div class="actions">
+    <!-- <a href="/admin/api/readings/USER001" class="btn outline">📊 View All Readings</a> -->
+    <a href="/admin/users" class="btn outline"> View Users</a>
+    <a href="/admin/alerts" class="btn outline">🚨 View Alerts</a>
+    <!-- <a href="/admin/user/USER001/latest" class="btn outline">📡USER001 Latest Reading</a> -->
+    <!-- <a href="/admin/user/USER001/readings" class="btn outline">📊 View Any users Readings</a> -->
+    <!-- <a href="/admin/summary" class="btn outline">📅 Summary</a> -->
+  </div>
+</div>

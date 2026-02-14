@@ -1,0 +1,300 @@
+<!-- ADMIN SIDEBAR PARTIAL - FIXED SPACING -->
+<!-- File: views/partials/admin-sidebar.hbs -->
+<style>
+  /* Sidebar Content Wrapper */
+  .sidebar-content {
+    flex: 1;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* Reduce nav-section margin to fix spacing */
+  .nav-section {
+    margin-bottom: 1.5rem;
+    /* Reduced from 2rem */
+  }
+
+  .nav-section:last-child {
+    margin-bottom: 0;
+    /* No margin on last section */
+  }
+
+  /* Modal Styles */
+  .modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(15, 23, 42, 0.75);
+    backdrop-filter: blur(4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s ease, visibility 0.3s ease;
+  }
+
+  .modal-overlay.show {
+    opacity: 1;
+    visibility: visible;
+  }
+
+  .modal-container {
+    background: white;
+    border-radius: 16px;
+    padding: 2rem;
+    max-width: 400px;
+    width: 90%;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    transform: scale(0.9) translateY(20px);
+    transition: transform 0.3s ease;
+  }
+
+  .modal-overlay.show .modal-container {
+    transform: scale(1) translateY(0);
+  }
+
+  .modal-icon {
+    width: 64px;
+    height: 64px;
+    margin: 0 auto 1.5rem;
+    background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+  }
+
+  .modal-icon i {
+    width: 32px;
+    height: 32px;
+  }
+
+  .modal-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #0f172a;
+    text-align: center;
+    margin-bottom: 0.75rem;
+  }
+
+  .modal-message {
+    font-size: 1rem;
+    color: #64748b;
+    text-align: center;
+    margin-bottom: 2rem;
+    line-height: 1.6;
+  }
+
+  .modal-actions {
+    display: flex;
+    gap: 1rem;
+  }
+
+  .modal-btn {
+    flex: 1;
+    padding: 0.875rem 1.5rem;
+    border-radius: 10px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: none;
+    font-family: 'DM Sans', sans-serif;
+  }
+
+  .modal-btn-cancel {
+    background: #f1f5f9;
+    color: #64748b;
+  }
+
+  .modal-btn-cancel:hover {
+    background: #e2e8f0;
+    color: #475569;
+  }
+
+  .modal-btn-confirm {
+    background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+    color: white;
+  }
+
+  .modal-btn-confirm:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(239, 68, 68, 0.4);
+  }
+
+  /* Logout button */
+  .logout-link {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.875rem 1rem;
+    color: #64748b;
+    text-decoration: none;
+    border-radius: 10px;
+    transition: all 0.2s ease;
+    cursor: pointer;
+    background: transparent;
+    border: none;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.95rem;
+    font-weight: 500;
+    width: 100%;
+    text-align: left;
+  }
+
+  .logout-link:hover {
+    background: rgba(239, 68, 68, 0.1);
+    color: #ef4444;
+  }
+
+  .logout-link i {
+    width: 20px;
+    height: 20px;
+  }
+</style>
+<aside class="sidebar">
+  <!-- Top Section -->
+  <div class="sidebar-content">
+    <!-- Logo -->
+    <div class="sidebar-logo">
+      <div class="logo-icon">
+        <i data-lucide="shield-check"></i>
+      </div>
+      <span class="logo-text">Admin Panel</span>
+    </div>
+
+    <!-- Navigation -->
+    <nav class="sidebar-nav">
+      <!-- Main Menu Section -->
+      <div class="nav-section">
+        <div class="nav-section-title">Overview</div>
+        <a href="/admin/dashboard" class="nav-link {{#if (eq active 'dashboard')}}active{{/if}}">
+          <i data-lucide="layout-dashboard"></i>
+          <span>Dashboard</span>
+        </a>
+      </div>
+
+      <!-- Management Section -->
+      <div class="nav-section">
+        <div class="nav-section-title">Management</div>
+        <a href="/admin/users" class="nav-link {{#if (eq active 'users')}}active{{/if}}">
+          <i data-lucide="users"></i>
+          <span>User Management</span>
+        </a>
+      </div>
+
+      <!-- System Section -->
+      <div class="nav-section">
+        <div class="nav-section-title">System</div>
+        <a href="/admin/alerts" class="nav-link {{#if (eq active 'alerts')}}active{{/if}}">
+          <i data-lucide="bell"></i>
+          <span>System Alerts</span>
+          {{#if alertCount}}
+          <span class="nav-badge">{{alertCount}}</span>
+          {{/if}}
+        </a>
+      </div>
+
+      <!-- Account Section -->
+      <!-- <div class="nav-section">
+        <div class="nav-section-title">Account</div>
+        <a href="/admin/profile" class="nav-link {{#if (eq active 'profile')}}active{{/if}}">
+          <i data-lucide="user-circle"></i>
+          <span>My Profile</span>
+        </a>
+      </div> -->
+    </nav>
+  </div>
+
+  <!-- Bottom Section - Admin Info & Sign Out -->
+  <div class="sidebar-user">
+    <div class="user-info-card">
+      <div class="user-avatar">
+        {{#if admin.initials}}
+        {{admin.initials}}
+        {{else}}
+        A
+        {{/if}}
+      </div>
+      <div class="user-details">
+        <div class="user-name">{{#if admin.name}}{{admin.name}}{{else}}Administrator{{/if}}</div>
+        <div class="user-role">{{#if admin.role}}{{admin.role}}{{else}}System Admin{{/if}}</div>
+      </div>
+    </div>
+
+    <button type="button" class="logout-link" id="logoutButton">
+      <i data-lucide="log-out"></i>
+      <span>Sign Out</span>
+    </button>
+  </div>
+</aside>
+
+<!-- Logout Confirmation Modal -->
+<div class="modal-overlay" id="logoutModal">
+  <div class="modal-container">
+    <div class="modal-icon">
+      <i data-lucide="log-out"></i>
+    </div>
+    <h2 class="modal-title">Confirm Logout</h2>
+    <p class="modal-message">Are you sure you want to sign out from the admin panel?</p>
+    <div class="modal-actions">
+      <button type="button" class="modal-btn modal-btn-cancel" id="cancelLogout">
+        Cancel
+      </button>
+      <button type="button" class="modal-btn modal-btn-confirm" id="confirmLogout">
+        Sign Out
+      </button>
+    </div>
+  </div>
+</div>
+
+
+
+<script>
+  // Logout Modal Functionality
+  (function () {
+    const logoutButton = document.getElementById('logoutButton');
+    const logoutModal = document.getElementById('logoutModal');
+    const cancelLogout = document.getElementById('cancelLogout');
+    const confirmLogout = document.getElementById('confirmLogout');
+
+    // Show modal
+    logoutButton.addEventListener('click', function (e) {
+      e.preventDefault();
+      logoutModal.classList.add('show');
+    });
+
+    // Hide modal
+    function hideModal() {
+      logoutModal.classList.remove('show');
+    }
+
+    // Cancel logout
+    cancelLogout.addEventListener('click', hideModal);
+
+    // Close modal on overlay click
+    logoutModal.addEventListener('click', function (e) {
+      if (e.target === logoutModal) {
+        hideModal();
+      }
+    });
+
+    // Close modal on Escape key
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape' && logoutModal.classList.contains('show')) {
+        hideModal();
+      }
+    });
+
+    // Confirm logout
+    confirmLogout.addEventListener('click', function () {
+      window.location.href = '/admin/logout';
+    });
+  })();
+</script>

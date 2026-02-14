@@ -1,184 +1,188 @@
-<style>
-  * {
-    box-sizing: border-box;
-    font-family: "Segoe UI", sans-serif;
-  }
+<!-- ADMIN LATEST READING PAGE -->
+<link rel="stylesheet" href="/css/admin-latest.css">
 
-  body {
-    margin: 0;
-    padding: 30px;
-    background: #f4f6f8;
-  }
-
-  .admin-latest-page {
-    max-width: 1100px;
-    margin: auto;
-  }
-
-  h1 {
-    margin-bottom: 25px;
-    color: #222;
-  }
-
-  .reading-card {
-    background: #fff;
-    border-radius: 16px;
-    padding: 25px;
-    box-shadow: 0 10px 26px rgba(0, 0, 0, 0.07);
-  }
-
-  .header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    border-bottom: 1px solid #eee;
-    padding-bottom: 12px;
-    margin-bottom: 20px;
-  }
-
-  .header h2 {
-    margin: 0;
-    color: #0d6efd;
-  }
-
-  .device {
-    font-size: 0.9rem;
-    color: #777;
-    margin-top: 4px;
-  }
-
-  .time {
-    font-size: 0.85rem;
-    color: #777;
-  }
-
-  .grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-    gap: 18px;
-  }
-
-  .box {
-    background: #f9fafb;
-    border-radius: 12px;
-    padding: 16px;
-  }
-
-  .box h4 {
-    margin: 0 0 8px;
-    font-size: 0.95rem;
-    color: #333;
-  }
-
-  .box p {
-    margin: 4px 0;
-    font-size: 0.9rem;
-    color: #555;
-  }
-
-  .box span {
-    font-weight: 600;
-    color: #000;
-  }
-
-  .highlight {
-    color: #0d6efd;
-    font-weight: 700;
-  }
-
-  .footer {
-    margin-top: 20px;
-    padding-top: 12px;
-    border-top: 1px dashed #eee;
-    font-size: 0.85rem;
-    color: #777;
-  }
-
-  .back-btn {
-    display: inline-block;
-    margin-top: 25px;
-    text-decoration: none;
-    color: #0d6efd;
-    font-weight: 500;
-  }
-</style>
-<div class="admin-latest-page">
-  <a href="/" class="back-btn">
-    ← Back to Home
-  </a>
-  <h1>📡 User Latest Reading</h1>
+<div class="container">
+  <!-- Page Header -->
+  <div class="page-header">
+    <div class="header-content">
+      <a href="/admin/users" class="back-link">
+        <i data-lucide="arrow-left"></i>
+        <span>Back to Users</span>
+      </a>
+      <h1>
+        <i data-lucide="activity"></i>
+        Latest Reading
+      </h1>
+      <p class="header-subtitle">Real-time energy consumption data</p>
+    </div>
+  </div>
 
   {{#if latestReading}}
+  <!-- Reading Card -->
   <div class="reading-card">
-
-    <div class="header">
-      <div>
-        <h2>{{latestReading.user_id}}</h2>
+    <!-- Card Header -->
+    <div class="reading-header">
+      <div class="user-info">
+        <div class="user-avatar">
+          U
+        </div>
+        <div>
+          <h2 class="user-id">{{latestReading.user_id}}</h2>
+          <p class="reading-time">
+            <i data-lucide="clock"></i>
+            {{latestReading.timestamp}}
+          </p>
+        </div>
       </div>
-      <span class="time">{{latestReading.timestamp}}</span>
+      <!-- <div class="status-indicator">
+        <span class="status-dot"></span>
+        <span>Live Data</span>
+      </div> -->
     </div>
 
-    <div class="grid">
-
-      <div class="card">
-        <h3>⚡ Energy</h3>
-        <p>Daily Energy:
-          <span>{{latestReading.daily_energy_wh}} Wh</span>
-        </p>
-        <p>Daily Units:
-          <span>{{latestReading.daily_units}} kWh</span>
-        </p>
-        <p>Monthly Energy:
-          <span>{{latestReading.monthly_energy_wh}} Wh</span>
-        </p>
-        <p>Monthly Units:
-          <span>{{latestReading.monthly_units}} kWh</span>
-        </p>
-        <p>Total Energy:
-          <span>{{latestReading.total_energy_wh}} Wh</span>
-        </p>
+    <!-- Stats Grid -->
+    <div class="stats-grid">
+      <!-- Energy Stats -->
+      <div class="stat-box energy">
+        <div class="stat-icon">
+          <i data-lucide="zap"></i>
+        </div>
+        <h3 class="stat-title">Energy Consumption</h3>
+        <div class="stat-details">
+          <div class="stat-item">
+            <span class="stat-label">Daily Energy</span>
+            <span class="stat-value">{{latestReading.daily_energy_wh}} <span class="stat-unit">Wh</span></span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-label">Daily Units</span>
+            <span class="stat-value highlight">{{latestReading.daily_units}} <span class="stat-unit">kWh</span></span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-label">Monthly Energy</span>
+            <span class="stat-value">{{latestReading.monthly_energy_wh}} <span class="stat-unit">Wh</span></span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-label">Monthly Units</span>
+            <span class="stat-value highlight">{{latestReading.monthly_units}} <span class="stat-unit">kWh</span></span>
+          </div>
+          <div class="stat-item total">
+            <span class="stat-label">Total Energy</span>
+            <span class="stat-value">{{latestReading.total_energy_wh}} <span class="stat-unit">Wh</span></span>
+          </div>
+        </div>
       </div>
 
-      <div class="card">
-        <h3>🔌 Power</h3>
-        <p>Real Power:
-          <span>{{latestReading.power}} W</span>
-        </p>
+      <!-- Power Stats -->
+      <div class="stat-box power">
+        <div class="stat-icon">
+          <i data-lucide="gauge"></i>
+        </div>
+        <h3 class="stat-title">Current Power</h3>
+        <div class="power-display">
+          <div class="power-value">{{latestReading.power}}</div>
+          <div class="power-unit">Watts</div>
+        </div>
+        <div class="power-bar">
+          <div class="power-bar-fill" style="width: 70%"></div>
+        </div>
+        <p class="power-note">Real-time power consumption</p>
       </div>
 
-      <div class="card">
-        <h3>📟 Electrical Values</h3>
-        <p>Voltage:
-          <span>{{latestReading.voltage}} V</span>
-        </p>
-        <p>Current:
-          <span>{{latestReading.current}} A</span>
-        </p>
+      <!-- Electrical Values -->
+      <div class="stat-box electrical">
+        <div class="stat-icon">
+          <i data-lucide="plug"></i>
+        </div>
+        <h3 class="stat-title">Electrical Parameters</h3>
+        <div class="electrical-grid">
+          <div class="electrical-item">
+            <div class="electrical-icon voltage">
+              <i data-lucide="plug-zap"></i>
+            </div>
+            <div class="electrical-info">
+              <span class="electrical-label">Voltage</span>
+              <span class="electrical-value">{{latestReading.voltage}} <span class="electrical-unit">V</span></span>
+            </div>
+          </div>
+          <div class="electrical-item">
+            <div class="electrical-icon current">
+              <i data-lucide="zap"></i>
+            </div>
+            <div class="electrical-info">
+              <span class="electrical-label">Current</span>
+              <span class="electrical-value">{{latestReading.current}} <span class="electrical-unit">A</span></span>
+            </div>
+          </div>
+        </div>
       </div>
 
-      <div class="card">
-        <h3>⏱ Reading Info</h3>
-        <p>Timestamp:
-          <span>{{latestReading.timestamp}}</span>
-        </p>
-        <p>User ID:
-          <span>{{latestReading.user_id}}</span>
-        </p>
+      <!-- Reading Info -->
+      <div class="stat-box info">
+        <div class="stat-icon">
+          <i data-lucide="info"></i>
+        </div>
+        <h3 class="stat-title">Reading Information</h3>
+        <div class="info-details">
+          <div class="info-row">
+            <i data-lucide="calendar"></i>
+            <div class="info-content">
+              <span class="info-label">Timestamp</span>
+              <span class="info-value">{{latestReading.timestamp}}</span>
+            </div>
+          </div>
+          <div class="info-row">
+            <i data-lucide="user"></i>
+            <div class="info-content">
+              <span class="info-label">User ID</span>
+              <span class="info-value">{{latestReading.user_id}}</span>
+            </div>
+          </div>
+          <div class="info-row">
+            <i data-lucide="hash"></i>
+            <div class="info-content">
+              <span class="info-label">Reading ID</span>
+              <span class="info-value">{{latestReading.id}}</span>
+            </div>
+          </div>
+        </div>
       </div>
-
     </div>
 
-    <div class="footer">
-      <span>ID: {{latestReading.id}}</span>
+    <!-- Card Footer -->
+    <div class="reading-footer">
+      <div class="footer-info">
+        <i data-lucide="shield-check"></i>
+        <span>Data verified and recorded</span>
+      </div>
+      <div class="footer-actions">
+        <!-- <button class="action-btn secondary" onclick="window.print()">
+          <i data-lucide="printer"></i>
+          Print
+        </button> -->
+        <button class="action-btn primary" onclick="location.reload()">
+          <i data-lucide="refresh-cw"></i>
+          Refresh
+        </button>
+      </div>
     </div>
-
   </div>
   {{else}}
-  <p>No reading available</p>
+  <!-- Empty State -->
+  <div class="empty-state">
+    <div class="empty-icon">
+      <i data-lucide="activity"></i>
+    </div>
+    <h3>No Reading Available</h3>
+    <p>There is no latest reading available for this user.</p>
+    <a href="/admin/users" class="action-btn primary">
+      <i data-lucide="users"></i>
+      Back to Users
+    </a>
+  </div>
   {{/if}}
-
-  <a href="/admin/dashboard" class="back-btn">
-    ← Back to Dashboard
-  </a>
-
 </div>
+
+<script>
+  // Initialize Lucide icons
+  lucide.createIcons();
+</script>

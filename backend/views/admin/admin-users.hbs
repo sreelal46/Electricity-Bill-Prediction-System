@@ -1,153 +1,191 @@
+<!-- ADMIN USERS PAGE -->
+<link rel="stylesheet" href="/css/admin-users.css">
 <style>
-  * {
-    box-sizing: border-box;
-    font-family: "Segoe UI", sans-serif;
-  }
-
-  body {
-    background: #f4f6f8;
-    margin: 0;
-    padding: 30px;
-  }
-
-  .admin-users-page {
-    max-width: 1100px;
-    margin: auto;
-  }
-
-  h1 {
-    margin-bottom: 25px;
-    color: #222;
-  }
-
-  .users-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-    gap: 20px;
-  }
-
-  .user-card {
-    background: #fff;
-    border-radius: 14px;
-    padding: 20px;
-    box-shadow: 0 8px 22px rgba(0, 0, 0, 0.06);
-    transition: transform 0.2s ease;
-  }
-
-  .user-card:hover {
-    transform: translateY(-4px);
-  }
-
-  .user-header {
-    display: flex;
-    justify-content: space-between;
+  .new-registration-btn {
+    margin-right: 10px;
+    margin-top: 18px;
+    display: inline-flex;
     align-items: center;
-    margin-bottom: 12px;
-  }
-
-  .user-header h3 {
-    margin: 0;
-    color: #0d6efd;
-  }
-
-  .status {
-    padding: 4px 10px;
-    border-radius: 20px;
-    font-size: 0.75rem;
+    gap: 0.5rem;
+    padding: 0.875rem 1.5rem;
+    font-size: 0.9375rem;
     font-weight: 600;
-    text-transform: uppercase;
-  }
-
-  .status.active {
-    background: #e8f5e9;
-    color: #198754;
-  }
-
-  .status.inactive {
-    background: #f8d7da;
-    color: #dc3545;
-  }
-
-  .user-body p {
-    margin: 6px 0;
-    color: #555;
-  }
-
-  .user-footer {
-    display: flex;
-    flex-direction: row;
-    gap: 10px;
-    margin-top: 15px;
-  }
-
-  .btn {
-    display: inline-block;
-    text-decoration: none;
-    padding: 8px 10px;
-    background: #0d6efd;
-    color: #fff;
+    font-family: "DM Sans", sans-serif;
+    background: linear-gradient(135deg, #3b82f6 0%, #6366f1 100%);
+    color: white;
+    border: none;
     border-radius: 8px;
-    font-size: 0.85rem;
-  }
-
-  .btn:hover {
-    background: #0b5ed7;
-  }
-
-  .back-btn {
-    display: inline-block;
-    margin-top: 25px;
+    cursor: pointer;
+    transition: all 0.3s ease;
     text-decoration: none;
-    color: #0d6efd;
-    font-weight: 500;
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+  }
+
+  .new-registration-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(59, 130, 246, 0.4);
+  }
+
+  .new-registration-btn:active {
+    transform: translateY(0);
+  }
+
+  .new-registration-btn i {
+    width: 20px;
+    height: 20px;
+  }
+
+  /* Alternative styles */
+
+  /* Outline variant */
+  .new-registration-btn.outline {
+    background: transparent;
+    color: #3b82f6;
+    border: 2px solid #3b82f6;
+    box-shadow: none;
+  }
+
+  .new-registration-btn.outline:hover {
+    background: #3b82f6;
+    color: white;
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+  }
+
+  /* Large variant */
+  .new-registration-btn.large {
+    padding: 1rem 2rem;
+    font-size: 1.0625rem;
+  }
+
+  /* Small variant */
+  .new-registration-btn.small {
+    padding: 0.625rem 1rem;
+    font-size: 0.875rem;
+  }
+
+  /* Icon only variant */
+  .new-registration-btn.icon-only {
+    padding: 0.875rem;
+    border-radius: 50%;
+  }
+
+  .new-registration-btn.icon-only span {
+    display: none;
   }
 </style>
+<div class="container">
+  <!-- Page Header -->
+  <div class="page-header">
+    <div class="header-content">
+      <a href="/admin/dashboard" class="back-link">
+        <i data-lucide="arrow-left"></i>
+        <span>Back to Dashboard</span>
+      </a>
+      <h1>
+        <i data-lucide="users"></i>
+        User Management
+      </h1>
+      <p class="header-subtitle">Manage and monitor all registered users</p>
+    </div>
 
-<div class="admin-users-page">
-  <a href="/" class="back-btn">
-    ← Back to Home
-  </a>
-  <h1>👥 All Users</h1>
+    <a href="/admin/registration" class="new-registration-btn outline">
+      <i data-lucide="user-plus"></i>
+      <span>New Registration</span>
+    </a>
+    <div class="header-stats">
+      <div class="stat-pill">
+        <span class="stat-value">{{users.length}}</span>
+        <span class="stat-label">Total Users</span>
+      </div>
+    </div>
+  </div>
 
   {{#if users.length}}
+  <!-- Users Grid -->
   <div class="users-grid">
-
     {{#each users}}
     <div class="user-card">
-
+      <!-- Card Header -->
       <div class="user-header">
-        <h3>{{user_name:}}</h3>
-        <span class="status {{status}}">
+        <div class="user-avatar-wrapper">
+          <div class="user-avatar">
+            {{#if user_initials}}
+            {{user_initials}}
+            {{else}}
+            {{substring user_name 0 1}}
+            {{/if}}
+          </div>
+          <div class="user-info">
+            <h3 class="user-name">{{user_name}}</h3>
+            <p class="user-id">ID: {{user_id}}</p>
+          </div>
+        </div>
+        <span class="status-badge {{status}}">
+          <i data-lucide="{{#if (eq status 'active')}}check-circle{{else}}x-circle{{/if}}"></i>
           {{status}}
         </span>
       </div>
 
-      <div class="user-body">
-        <p><strong>User ID:</strong> {{user_id}}</p>
-        <p><strong>Approved Load:</strong> {{approved_load_kw}} kW</p>
-        <p><strong>Phase:</strong> {{approved_phase}}</p>
-        <p><strong>Created:</strong> {{registration_date}}</p>
+      <!-- Card Body -->
+      <div class="user-details2">
+        <div class="detail-row">
+          <div class="detail-icon">
+            <i data-lucide="zap"></i>
+          </div>
+          <div class="detail-content">
+            <span class="detail-label">Approved Load</span>
+            <span class="detail-value">{{approved_load_kw}} kW</span>
+          </div>
+        </div>
+
+        <div class="detail-row">
+          <div class="detail-icon">
+            <i data-lucide="activity"></i>
+          </div>
+          <div class="detail-content">
+            <span class="detail-label">Phase</span>
+            <span class="detail-value">{{approved_phase}}</span>
+          </div>
+        </div>
+
+        <div class="detail-row">
+          <div class="detail-icon">
+            <i data-lucide="calendar"></i>
+          </div>
+          <div class="detail-content">
+            <span class="detail-label">Registered</span>
+            <span class="detail-value">{{registration_date}}</span>
+          </div>
+        </div>
       </div>
 
-      <div class="user-footer">
-        <a href="/admin/user/{{user_id}}/latest" class="btn">
-          View Latest Reading
+      <!-- Card Footer -->
+      <div class="user-actions">
+        <a href="/admin/user/{{user_id}}/latest" class="action-btn primary">
+          <i data-lucide="eye"></i>
+          <span>View Latest</span>
         </a>
-        <a href="/admin/daily-summary/{{user_id}}" class="btn">
-          View Daily summary
+        <a href="/admin/daily-summary/{{user_id}}" class="action-btn secondary">
+          <i data-lucide="bar-chart-2"></i>
+          <span>Daily Summary</span>
         </a>
       </div>
-
     </div>
     {{/each}}
-
   </div>
   {{else}}
-  <p>No users found.</p>
+  <!-- Empty State -->
+  <div class="empty-state">
+    <div class="empty-icon">
+      <i data-lucide="users"></i>
+    </div>
+    <h3>No Users Found</h3>
+    <p>There are no registered users in the system yet.</p>
+  </div>
   {{/if}}
-
-  <a href="/admin/dashboard" class="back-btn">
-    ← Back to Dashboard
-  </a>
-
 </div>
+
+<script>
+  // Initialize Lucide icons
+  lucide.createIcons();
+</script>

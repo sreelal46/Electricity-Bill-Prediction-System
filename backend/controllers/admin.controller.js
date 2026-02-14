@@ -3,6 +3,16 @@ import db from "../config/firebase.js";
 export const loginPage = async (req, res) => {
   res.status(200).render("admin/login", { layout: false });
 };
+export const registrationPage = async (req, res) => {
+  res.status(200).render("admin/registration");
+};
+export const verifyUser = async (req, res, next) => {
+  try {
+    console.log(req.body);
+    req.session.user = { id: "USER001" };
+    res.redirect("/admin/dashboard");
+  } catch (error) {}
+};
 
 export const dashboardController = async (req, res, next) => {
   try {
