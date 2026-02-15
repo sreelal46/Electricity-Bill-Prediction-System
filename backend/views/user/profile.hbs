@@ -323,17 +323,17 @@
       <div class="profile-header">
         <div class="profile-identity">
           <div class="profile-avatar">
-            {{#if user.user_name}}
-            {{substring user.user_name 0 2}}
+            {{#if user.name}}
+            {{substring user.name 0 2}}
             {{else}}
             U
             {{/if}}
           </div>
           <div class="profile-info">
-            <h2>{{user.user_name}}</h2>
+            <h2>{{user.name}}</h2>
             <div class="profile-role">
               <i data-lucide="zap"></i>
-              <span>Energy Consumer • ID: {{user.user_id}}</span>
+              <span>Energy Consumer • ID: {{user.id}}</span>
             </div>
           </div>
         </div>
@@ -364,7 +364,7 @@
             </div>
             <div class="info-text">
               <div class="info-label">Phone Number</div>
-              <div class="info-value">{{user.phone}}</div>
+              <div class="info-value">{{user.phoneNumber}}</div>
             </div>
           </div>
 
@@ -391,7 +391,7 @@
             </div>
             <div class="info-text">
               <div class="info-label">Consumer Number</div>
-              <div class="info-value">{{formatDate user.registration_date}}</div>
+              <div class="info-value">{{user.consumerNumber}}</div>
             </div>
           </div>
           <div class="info-item">

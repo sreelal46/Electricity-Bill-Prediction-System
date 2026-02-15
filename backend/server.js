@@ -1,5 +1,5 @@
 // ===================================================================
-// Updated Server.js with Handlebars + ML Integration
+// Updated Server.js with Handlebars + ML Integration + Session Persistence
 // Complete server setup with views and routes
 // ===================================================================
 import dotenv from "dotenv";
@@ -9,6 +9,7 @@ import path from "path";
 import cors from "cors";
 import { fileURLToPath } from "url";
 import session from "express-session";
+import FileStore from "session-file-store";
 import { engine } from "express-handlebars";
 import userRoutes from "./routes/user.routes.js";
 import adminRoutes from "./routes/admin.routes.js";
@@ -20,15 +21,24 @@ const PORT = process.env.PORT || 8000;
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// ============ Session Setup ============
+// ============ Session File Store Setup ============
+const SessionFileStore = FileStore(session);
+
 app.use(
   session({
     name: "kseb-session",
     secret: process.env.SESSION_SECRET || "super-secret-key",
     resave: false,
     saveUninitialized: false,
+    store: new SessionFileStore({
+      path: path.join(__dirname, "sessions"), // Directory to store session files
+      ttl: 60 * 60 * 2, // 2 hours in seconds
+      retries: 0,
+      reapInterval: 60 * 60, // Clean up expired sessions every hour
+      logFn: function () {}, // Disable logging, or use console.log for debugging
+    }),
     cookie: {
-      secure: false, // true if using HTTPS
+      secure: false, // Set to true if using HTTPS
       httpOnly: true,
       maxAge: 1000 * 60 * 60 * 2, // 2 hours
     },
@@ -60,9 +70,6 @@ app.engine(
       toLowerCase: function (str) {
         return str ? str.toLowerCase() : "";
       },
-      eq: function (a, b) {
-        return a === b;
-      },
       getConfidencePercent: function (confidence) {
         const percentages = {
           high: 95,
@@ -76,7 +83,8 @@ app.engine(
       },
       countSeverity: (alerts, level) => {
         return alerts.filter((alert) => alert.severity === level).length;
-      }, // Count items by a specific property value
+      },
+      // Count items by a specific property value
       countBy: function (array, property, value) {
         if (!Array.isArray(array)) return 0;
         return array.filter((item) => item[property] === value).length;
@@ -98,10 +106,6 @@ app.engine(
       // Check if array has items
       hasItems: function (array) {
         return Array.isArray(array) && array.length > 0;
-      }, // Convert string to lowercase
-      toLowerCase: function (str) {
-        if (!str) return "";
-        return str.toLowerCase();
       },
       // Get substring (for initials)
       substring: function (str, start, end) {

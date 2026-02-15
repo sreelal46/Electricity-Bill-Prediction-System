@@ -1,6 +1,184 @@
 <!-- ADMIN LATEST READING PAGE -->
 <link rel="stylesheet" href="/css/admin-latest.css">
 
+<style>
+  /* Enhanced Empty State Styles */
+  .empty-state {
+    text-align: center;
+    padding: 4rem 2rem;
+    background: var(--bg-card);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow-sm);
+  }
+
+  .empty-icon {
+    width: 120px;
+    height: 120px;
+    margin: 0 auto 2rem;
+    background: var(--bg-secondary);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-secondary);
+  }
+
+  .empty-icon svg {
+    width: 60px;
+    height: 60px;
+  }
+
+  .empty-state h3 {
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 1rem;
+  }
+
+  .empty-state p {
+    font-size: 1.05rem;
+    color: var(--text-secondary);
+    margin-bottom: 2rem;
+    line-height: 1.6;
+  }
+
+  .empty-state-suggestions {
+    max-width: 500px;
+    margin: 0 auto 2rem;
+    text-align: left;
+  }
+
+  .empty-state-suggestion {
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+    padding: 1rem;
+    background: var(--bg-secondary);
+    border-radius: 12px;
+    margin-bottom: 1rem;
+    border: 1px solid var(--border);
+  }
+
+  .empty-state-suggestion-icon {
+    width: 40px;
+    height: 40px;
+    background: rgba(59, 130, 246, 0.1);
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    color: var(--accent-blue);
+  }
+
+  .empty-state-suggestion-icon svg {
+    width: 20px;
+    height: 20px;
+  }
+
+  .empty-state-suggestion-content h4 {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 0.25rem;
+  }
+
+  .empty-state-suggestion-content p {
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+    margin: 0;
+    line-height: 1.5;
+  }
+
+  .empty-state-actions {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+
+  .status-indicator {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    background: var(--bg-secondary);
+    border-radius: 999px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--text-secondary);
+  }
+
+  .status-indicator.live {
+    background: rgba(16, 185, 129, 0.1);
+    color: var(--accent-green);
+  }
+
+  .status-indicator.offline {
+    background: rgba(148, 163, 184, 0.1);
+    color: var(--text-secondary);
+  }
+
+  .status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: currentColor;
+  }
+
+  .status-indicator.live .status-dot {
+    animation: pulse 2s ease-in-out infinite;
+  }
+
+  @keyframes pulse {
+
+    0%,
+    100% {
+      opacity: 1;
+    }
+
+    50% {
+      opacity: 0.5;
+    }
+  }
+
+  /* Placeholder styles for missing data */
+  .stat-value.placeholder,
+  .power-value.placeholder,
+  .electrical-value.placeholder,
+  .info-value.placeholder {
+    color: var(--text-secondary);
+    font-style: italic;
+  }
+
+  /* Responsive */
+  @media (max-width: 768px) {
+    .empty-state h3 {
+      font-size: 1.5rem;
+    }
+
+    .empty-state p {
+      font-size: 0.95rem;
+    }
+
+    .empty-icon {
+      width: 100px;
+      height: 100px;
+    }
+
+    .empty-icon svg {
+      width: 50px;
+      height: 50px;
+    }
+
+    .empty-state-actions {
+      flex-direction: column;
+      align-items: stretch;
+    }
+  }
+</style>
+
 <div class="container">
   <!-- Page Header -->
   <div class="page-header">
@@ -24,20 +202,24 @@
     <div class="reading-header">
       <div class="user-info">
         <div class="user-avatar">
+          {{#if latestReading.user_id}}
+          {{substring latestReading.user_id 0 1}}
+          {{else}}
           U
+          {{/if}}
         </div>
         <div>
-          <h2 class="user-id">{{latestReading.user_id}}</h2>
+          <h2 class="user-id">{{#if latestReading.user_id}}{{latestReading.user_id}}{{else}}Unknown User{{/if}}</h2>
           <p class="reading-time">
             <i data-lucide="clock"></i>
-            {{formatDate latestReading.timestamp}}
+            {{#if latestReading.timestamp}}{{formatDate latestReading.timestamp}}{{else}}No timestamp{{/if}}
           </p>
         </div>
       </div>
-      <!-- <div class="status-indicator">
+      <div class="status-indicator {{#if latestReading.timestamp}}live{{else}}offline{{/if}}">
         <span class="status-dot"></span>
-        <span>Live Data</span>
-      </div> -->
+        <span>{{#if latestReading.timestamp}}Live Data{{else}}No Data{{/if}}</span>
+      </div>
     </div>
 
     <!-- Stats Grid -->
@@ -51,23 +233,38 @@
         <div class="stat-details">
           <div class="stat-item">
             <span class="stat-label">Daily Energy</span>
-            <span class="stat-value">{{latestReading.daily_energy_wh}} <span class="stat-unit">Wh</span></span>
+            <span class="stat-value {{#unless latestReading.daily_energy_wh}}placeholder{{/unless}}">
+              {{#if latestReading.daily_energy_wh}}{{latestReading.daily_energy_wh}}{{else}}—{{/if}}
+              <span class="stat-unit">Wh</span>
+            </span>
           </div>
           <div class="stat-item">
             <span class="stat-label">Daily Units</span>
-            <span class="stat-value highlight">{{latestReading.daily_units}} <span class="stat-unit">kWh</span></span>
+            <span class="stat-value highlight {{#unless latestReading.daily_units}}placeholder{{/unless}}">
+              {{#if latestReading.daily_units}}{{latestReading.daily_units}}{{else}}—{{/if}}
+              <span class="stat-unit">kWh</span>
+            </span>
           </div>
           <div class="stat-item">
             <span class="stat-label">Monthly Energy</span>
-            <span class="stat-value">{{latestReading.monthly_energy_wh}} <span class="stat-unit">Wh</span></span>
+            <span class="stat-value {{#unless latestReading.monthly_energy_wh}}placeholder{{/unless}}">
+              {{#if latestReading.monthly_energy_wh}}{{latestReading.monthly_energy_wh}}{{else}}—{{/if}}
+              <span class="stat-unit">Wh</span>
+            </span>
           </div>
           <div class="stat-item">
             <span class="stat-label">Monthly Units</span>
-            <span class="stat-value highlight">{{latestReading.monthly_units}} <span class="stat-unit">kWh</span></span>
+            <span class="stat-value highlight {{#unless latestReading.monthly_units}}placeholder{{/unless}}">
+              {{#if latestReading.monthly_units}}{{latestReading.monthly_units}}{{else}}—{{/if}}
+              <span class="stat-unit">kWh</span>
+            </span>
           </div>
           <div class="stat-item total">
             <span class="stat-label">Total Energy</span>
-            <span class="stat-value">{{latestReading.total_energy_wh}} <span class="stat-unit">Wh</span></span>
+            <span class="stat-value {{#unless latestReading.total_energy_wh}}placeholder{{/unless}}">
+              {{#if latestReading.total_energy_wh}}{{latestReading.total_energy_wh}}{{else}}—{{/if}}
+              <span class="stat-unit">Wh</span>
+            </span>
           </div>
         </div>
       </div>
@@ -79,13 +276,17 @@
         </div>
         <h3 class="stat-title">Current Power</h3>
         <div class="power-display">
-          <div class="power-value">{{latestReading.power}}</div>
+          <div class="power-value {{#unless latestReading.power}}placeholder{{/unless}}">
+            {{#if latestReading.power}}{{latestReading.power}}{{else}}—{{/if}}
+          </div>
           <div class="power-unit">Watts</div>
         </div>
         <div class="power-bar">
-          <div class="power-bar-fill" style="width: 70%"></div>
+          <div class="power-bar-fill" style="width: {{#if latestReading.power}}70%{{else}}0%{{/if}}"></div>
         </div>
-        <p class="power-note">Real-time power consumption</p>
+        <p class="power-note">
+          {{#if latestReading.power}}Real-time power consumption{{else}}No power data available{{/if}}
+        </p>
       </div>
 
       <!-- Electrical Values -->
@@ -101,7 +302,10 @@
             </div>
             <div class="electrical-info">
               <span class="electrical-label">Voltage</span>
-              <span class="electrical-value">{{latestReading.voltage}} <span class="electrical-unit">V</span></span>
+              <span class="electrical-value {{#unless latestReading.voltage}}placeholder{{/unless}}">
+                {{#if latestReading.voltage}}{{latestReading.voltage}}{{else}}—{{/if}}
+                <span class="electrical-unit">V</span>
+              </span>
             </div>
           </div>
           <div class="electrical-item">
@@ -110,7 +314,10 @@
             </div>
             <div class="electrical-info">
               <span class="electrical-label">Current</span>
-              <span class="electrical-value">{{latestReading.current}} <span class="electrical-unit">A</span></span>
+              <span class="electrical-value {{#unless latestReading.current}}placeholder{{/unless}}">
+                {{#if latestReading.current}}{{latestReading.current}}{{else}}—{{/if}}
+                <span class="electrical-unit">A</span>
+              </span>
             </div>
           </div>
         </div>
@@ -127,23 +334,20 @@
             <i data-lucide="calendar"></i>
             <div class="info-content">
               <span class="info-label">Timestamp</span>
-              <span class="info-value">{{formatDate latestReading.timestamp}}</span>
+              <span class="info-value {{#unless latestReading.timestamp}}placeholder{{/unless}}">
+                {{#if latestReading.timestamp}}{{formatDate latestReading.timestamp}}{{else}}Not available{{/if}}
+              </span>
             </div>
           </div>
           <div class="info-row">
             <i data-lucide="user"></i>
             <div class="info-content">
               <span class="info-label">User ID</span>
-              <span class="info-value">{{latestReading.user_id}}</span>
+              <span class="info-value {{#unless latestReading.user_id}}placeholder{{/unless}}">
+                {{#if latestReading.user_id}}{{latestReading.user_id}}{{else}}Not available{{/if}}
+              </span>
             </div>
           </div>
-          <!-- <div class="info-row">
-            <i data-lucide="hash"></i>
-            <div class="info-content">
-              <span class="info-label">Reading ID</span>
-              <span class="info-value">{{latestReading.id}}</span>
-            </div>
-          </div> -->
         </div>
       </div>
     </div>
@@ -152,13 +356,9 @@
     <div class="reading-footer">
       <div class="footer-info">
         <i data-lucide="shield-check"></i>
-        <span>Data verified and recorded</span>
+        <span>{{#if latestReading.timestamp}}Data verified and recorded{{else}}Awaiting data{{/if}}</span>
       </div>
       <div class="footer-actions">
-        <!-- <button class="action-btn secondary" onclick="window.print()">
-          <i data-lucide="printer"></i>
-          Print
-        </button> -->
         <button class="action-btn primary" onclick="location.reload()">
           <i data-lucide="refresh-cw"></i>
           Refresh
@@ -167,22 +367,97 @@
     </div>
   </div>
   {{else}}
-  <!-- Empty State -->
+  <!-- Enhanced Empty State -->
   <div class="empty-state">
     <div class="empty-icon">
       <i data-lucide="activity"></i>
     </div>
     <h3>No Reading Available</h3>
-    <p>There is no latest reading available for this user.</p>
-    <a href="/admin/users" class="action-btn primary">
-      <i data-lucide="users"></i>
-      Back to Users
-    </a>
+    <p>There is no latest reading available for this user. This could be due to several reasons:</p>
+
+    <div class="empty-state-suggestions">
+      <div class="empty-state-suggestion">
+        <div class="empty-state-suggestion-icon">
+          <i data-lucide="wifi-off"></i>
+        </div>
+        <div class="empty-state-suggestion-content">
+          <h4>Device Not Connected</h4>
+          <p>The smart meter may not be connected or powered on.</p>
+        </div>
+      </div>
+
+      <div class="empty-state-suggestion">
+        <div class="empty-state-suggestion-icon">
+          <i data-lucide="clock"></i>
+        </div>
+        <div class="empty-state-suggestion-content">
+          <h4>No Recent Data</h4>
+          <p>The device hasn't transmitted any data recently.</p>
+        </div>
+      </div>
+
+      <div class="empty-state-suggestion">
+        <div class="empty-state-suggestion-icon">
+          <i data-lucide="user-x"></i>
+        </div>
+        <div class="empty-state-suggestion-content">
+          <h4>New User</h4>
+          <p>This user may have just been registered and hasn't sent data yet.</p>
+        </div>
+      </div>
+
+      <div class="empty-state-suggestion">
+        <div class="empty-state-suggestion-icon">
+          <i data-lucide="alert-circle"></i>
+        </div>
+        <div class="empty-state-suggestion-content">
+          <h4>System Issue</h4>
+          <p>There may be a temporary system or connectivity issue.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="empty-state-actions">
+      <button class="action-btn primary" onclick="location.reload()">
+        <i data-lucide="refresh-cw"></i>
+        Refresh Page
+      </button>
+      <a href="/admin/users" class="action-btn secondary">
+        <i data-lucide="users"></i>
+        Back to Users
+      </a>
+      <a href="/admin/dashboard" class="action-btn secondary">
+        <i data-lucide="layout-dashboard"></i>
+        Dashboard
+      </a>
+    </div>
   </div>
   {{/if}}
 </div>
 
+<!-- Data holder for reading status -->
+<div id="readingData" data-has-reading="{{#if latestReading}}true{{else}}false{{/if}}" style="display: none;"></div>
+
 <script>
   // Initialize Lucide icons
   lucide.createIcons();
+
+  // Get reading status from data attribute
+  const readingDataElement = document.getElementById('readingData');
+  const hasReading = readingDataElement.dataset.hasReading === 'true';
+
+  if (hasReading) {
+    console.log('✅ Latest reading data loaded');
+  } else {
+    console.warn('⚠️ No reading data available');
+  }
+
+  // Auto-refresh every 30 seconds if on the page with data
+  if (hasReading) {
+    console.log('🔄 Auto-refresh enabled (30s interval)');
+    setInterval(() => {
+      console.log('Refreshing page...');
+      location.reload();
+    }, 30000);
+  }
 </script>

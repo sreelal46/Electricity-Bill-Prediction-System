@@ -37,6 +37,12 @@
     box-shadow: 0 0 10px var(--accent-green);
   }
 
+  .status-indicator.offline {
+    background: var(--text-secondary);
+    box-shadow: 0 0 10px var(--text-secondary);
+    animation: none;
+  }
+
 
   .last-updated {
     font-family: 'JetBrains Mono', monospace;
@@ -306,6 +312,82 @@
     margin: 0 auto 1rem;
   }
 
+  /* EMPTY STATE */
+  .empty-state {
+    text-align: center;
+    padding: 3rem 1rem;
+    color: var(--text-secondary);
+  }
+
+  .empty-state-icon {
+    width: 80px;
+    height: 80px;
+    margin: 0 auto 1.5rem;
+    background: var(--bg-secondary);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-secondary);
+  }
+
+  .empty-state-icon svg {
+    width: 40px;
+    height: 40px;
+  }
+
+  .empty-state h3 {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 0.5rem;
+  }
+
+  .empty-state p {
+    font-size: 0.95rem;
+    color: var(--text-secondary);
+    margin-bottom: 1.5rem;
+  }
+
+  .empty-state-actions {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+
+  .empty-state-btn {
+    background: var(--accent-blue);
+    color: white;
+    padding: 0.75rem 1.5rem;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+    font-size: 0.95rem;
+    font-family: 'DM Sans', sans-serif;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .empty-state-btn:hover {
+    background: var(--accent-blue);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+  }
+
+  .empty-state-btn.secondary {
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    border: 1px solid var(--border);
+  }
+
+  .empty-state-btn.secondary:hover {
+    background: var(--bg-card);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  }
+
   @keyframes spin {
     0% {
       transform: rotate(0deg);
@@ -347,6 +429,11 @@
     .search-box {
       width: 100%;
     }
+
+    .empty-state-actions {
+      flex-direction: column;
+      align-items: stretch;
+    }
   }
 </style>
 </head>
@@ -366,8 +453,8 @@
           Energy Dashboard
         </h1>
         <div class="header-subtitle">
-          <span class="status-indicator"></span>
-          <span>Live Monitoring</span>
+          <span class="status-indicator" id="statusIndicator"></span>
+          <span id="statusText">Live Monitoring</span>
         </div>
       </div>
       <div class="last-updated">
@@ -431,7 +518,7 @@
             <button class="chart-btn active">Week</button>
           </div>
         </div>
-        <div class="chart-container">
+        <div class="chart-container" id="dailyChartContainer">
           <canvas id="dailyChart"></canvas>
         </div>
       </div>
@@ -443,7 +530,7 @@
             <button class="chart-btn active">Power</button>
           </div>
         </div>
-        <div class="chart-container">
+        <div class="chart-container" id="loadChartContainer">
           <canvas id="loadChart"></canvas>
         </div>
       </div>
@@ -453,7 +540,7 @@
     <div class="table-card">
       <div class="table-header">
         <h3 class="table-title">Recent Readings</h3>
-        <input type="text" class="search-box" placeholder="Search readings..." id="searchBox">
+        <!-- <input type="text" class="search-box" placeholder="Search readings..." id="searchBox"> -->
       </div>
       <div class="table-wrapper">
         <table>
@@ -491,16 +578,75 @@
 
     console.log("📊 Dashboard Data:", { dailyTrend, latestReading, todayReadings });
 
+    // Check if we have any data
+    const hasData = dailyTrend.length > 0 || latestReading !== null || todayReadings.length > 0;
+
+    // ========================================
+    // UPDATE STATUS INDICATOR
+    // ========================================
+    const statusIndicator = document.getElementById('statusIndicator');
+    const statusText = document.getElementById('statusText');
+
+    if (!hasData) {
+      statusIndicator.classList.add('offline');
+      statusText.textContent = 'No Data Available';
+    }
+
     // ========================================
     // UPDATE LAST UPDATED TIME
     // ========================================
     function updateLastUpdatedTime() {
+      if (!hasData) {
+        document.getElementById('lastUpdate').textContent = 'Never';
+        return;
+      }
       const now = new Date();
       const timeStr = now.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
       document.getElementById('lastUpdate').textContent = timeStr;
     }
     updateLastUpdatedTime();
-    setInterval(updateLastUpdatedTime, 1000);
+    if (hasData) {
+      setInterval(updateLastUpdatedTime, 1000);
+    }
+
+    // ========================================
+    // CREATE EMPTY STATE
+    // ========================================
+    function createEmptyState(container, type = 'chart') {
+      const messages = {
+        chart: {
+          icon: 'bar-chart-3',
+          title: 'No Chart Data Available',
+          description: 'Start monitoring your energy usage to see visualizations here.'
+        },
+        table: {
+          icon: 'inbox',
+          title: 'No Readings Available',
+          description: 'Energy readings will appear here once your smart meter starts sending data.'
+        }
+      };
+
+      const msg = messages[type];
+
+      container.innerHTML = `
+        <div class="empty-state">
+          <div class="empty-state-icon">
+            <i data-lucide="${msg.icon}"></i>
+          </div>
+          <h3>${msg.title}</h3>
+          <p>${msg.description}</p>
+          <div class="empty-state-actions">
+            <button class="empty-state-btn" onclick="location.reload()">
+              <i data-lucide="refresh-cw"></i>
+              Refresh Page
+            </button>
+          </div>
+        </div>
+      `;
+
+      // Re-initialize icons for the new elements
+      lucide.createIcons();
+    }
 
     // ========================================
     // POPULATE KPI CARDS
@@ -530,6 +676,8 @@
           changeEl.textContent = `↓ ${Math.abs(change)}% vs yesterday`;
           changeEl.className = "kpi-change positive";
         }
+      } else {
+        document.getElementById("todayChange").textContent = "No comparison data";
       }
 
       // Peak Demand
@@ -557,6 +705,21 @@
       document.getElementById("todayUnits").innerHTML = `${latestReading.daily_units.toFixed(2)} <span class="kpi-unit">kWh</span>`;
       document.getElementById("peak").innerHTML = `${(latestReading.power / 1000).toFixed(2)} <span class="kpi-unit">kW</span>`;
       document.getElementById("consumption").innerHTML = `${(latestReading.total_energy_wh / 1000).toFixed(2)} <span class="kpi-unit">kWh</span>`;
+
+      document.getElementById("todayChange").textContent = "Limited data available";
+      document.getElementById("peakTime").textContent = "Current reading";
+      document.getElementById("monthlyChange").textContent = "Limited data available";
+    } else {
+      // No data available - show placeholder
+      document.getElementById("currentPower").innerHTML = `-- <span class="kpi-unit">kW</span>`;
+      document.getElementById("todayUnits").innerHTML = `-- <span class="kpi-unit">kWh</span>`;
+      document.getElementById("peak").innerHTML = `-- <span class="kpi-unit">kW</span>`;
+      document.getElementById("consumption").innerHTML = `-- <span class="kpi-unit">kWh</span>`;
+
+      document.getElementById("powerChange").textContent = "No data available";
+      document.getElementById("todayChange").textContent = "No data available";
+      document.getElementById("peakTime").textContent = "No data available";
+      document.getElementById("monthlyChange").textContent = "No data available";
     }
 
     // ========================================
@@ -628,6 +791,10 @@
           }
         }
       });
+    } else {
+      // Show empty state for daily chart
+      const container = document.getElementById("dailyChartContainer");
+      createEmptyState(container, 'chart');
     }
 
     // ========================================
@@ -716,6 +883,10 @@
           }
         }
       });
+    } else {
+      // Show empty state for load chart
+      const container = document.getElementById("loadChartContainer");
+      createEmptyState(container, 'chart');
     }
 
     // ========================================
@@ -756,8 +927,24 @@
         });
       });
     } else {
-      document.getElementById("readingsTable").innerHTML =
-        '<tr><td colspan="5" class="loading">No readings available for today</td></tr>';
+      // Show empty state for table
+      document.getElementById("readingsTable").innerHTML = `
+        <tr>
+          <td colspan="5" style="padding: 0;">
+            <div class="empty-state">
+              <div class="empty-state-icon">
+                <i data-lucide="inbox"></i>
+              </div>
+              <h3>No Readings Available</h3>
+              <p>Energy readings will appear here once your smart meter starts sending data.</p>
+            </div>
+          </td>
+        </tr>
+      `;
+
+      // Disable search box
+      document.getElementById('searchBox').disabled = true;
+      document.getElementById('searchBox').placeholder = "No data to search";
     }
 
     // ========================================

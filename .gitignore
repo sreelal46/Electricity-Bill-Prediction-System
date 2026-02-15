@@ -1,7 +1,9 @@
 # =========================
 # Node.js (Backend)
 # =========================
-
+# Session Files
+sessions/
+*.session
 backend/node_modules/
 backend/.env
 backend/config/firebaseServiceKey.json

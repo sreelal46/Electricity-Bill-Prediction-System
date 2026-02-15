@@ -36,6 +36,30 @@
     gap: 0.5rem;
   }
 
+  .status-indicator {
+    width: 8px;
+    height: 8px;
+    background: var(--accent-green);
+    border-radius: 50%;
+    animation: pulse 2s ease-in-out infinite;
+    box-shadow: 0 0 10px var(--accent-green);
+  }
+
+  .status-indicator.healthy {
+    background: var(--accent-green);
+    box-shadow: 0 0 10px var(--accent-green);
+  }
+
+  .status-indicator.warning {
+    background: var(--accent-yellow);
+    box-shadow: 0 0 10px var(--accent-yellow);
+  }
+
+  .status-indicator.critical {
+    background: var(--accent-red);
+    box-shadow: 0 0 10px var(--accent-red);
+  }
+
   /* Stats Cards */
   .stats-card {
     display: flex;
@@ -244,6 +268,216 @@
     flex-direction: column;
     gap: 1.25rem;
   }
+
+  /* Empty State */
+  .empty-state {
+    text-align: center;
+    padding: 4rem 2rem;
+    color: var(--text-secondary);
+  }
+
+  .empty-state-icon {
+    width: 120px;
+    height: 120px;
+    margin: 0 auto 2rem;
+    background: linear-gradient(135deg, rgba(16, 185, 129, 0.1), rgba(59, 130, 246, 0.1));
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--accent-green);
+  }
+
+  .empty-state-icon svg {
+    width: 60px;
+    height: 60px;
+  }
+
+  .empty-state h2 {
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 1rem;
+  }
+
+  .empty-state p {
+    font-size: 1.05rem;
+    color: var(--text-secondary);
+    margin-bottom: 2rem;
+    max-width: 500px;
+    margin-left: auto;
+    margin-right: auto;
+    line-height: 1.6;
+  }
+
+  .empty-state-features {
+    max-width: 600px;
+    margin: 0 auto 2rem;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1.5rem;
+    text-align: left;
+  }
+
+  .empty-state-feature {
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+    padding: 1.25rem;
+    background: var(--bg-secondary);
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    transition: all 0.2s ease;
+  }
+
+  .empty-state-feature:hover {
+    background: var(--bg-card);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  }
+
+  .empty-state-feature-icon {
+    width: 40px;
+    height: 40px;
+    background: rgba(16, 185, 129, 0.1);
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    color: var(--accent-green);
+  }
+
+  .empty-state-feature-icon svg {
+    width: 20px;
+    height: 20px;
+  }
+
+  .empty-state-feature-content h4 {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 0.25rem;
+  }
+
+  .empty-state-feature-content p {
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+    margin: 0;
+    line-height: 1.5;
+  }
+
+  .empty-state-actions {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+
+  .empty-state-btn {
+    background: var(--accent-blue);
+    color: white;
+    padding: 0.875rem 1.75rem;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+    font-size: 1rem;
+    font-family: 'DM Sans', sans-serif;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-weight: 500;
+  }
+
+  .empty-state-btn:hover {
+    background: var(--accent-blue);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+  }
+
+  .empty-state-btn.secondary {
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    border: 1px solid var(--border);
+  }
+
+  .empty-state-btn.secondary:hover {
+    background: var(--bg-card);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  }
+
+  /* Success message styling */
+  .success-message {
+    background: linear-gradient(135deg, rgba(16, 185, 129, 0.1), rgba(59, 130, 246, 0.05));
+    border: 1px solid rgba(16, 185, 129, 0.2);
+    border-radius: 12px;
+    padding: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 2rem;
+  }
+
+  .success-message-icon {
+    width: 48px;
+    height: 48px;
+    background: rgba(16, 185, 129, 0.15);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--accent-green);
+    flex-shrink: 0;
+  }
+
+  .success-message-icon svg {
+    width: 24px;
+    height: 24px;
+  }
+
+  .success-message-content h3 {
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 0.25rem;
+  }
+
+  .success-message-content p {
+    font-size: 0.95rem;
+    color: var(--text-secondary);
+    margin: 0;
+  }
+
+  /* Responsive */
+  @media (max-width: 768px) {
+    .empty-state h2 {
+      font-size: 1.5rem;
+    }
+
+    .empty-state p {
+      font-size: 0.95rem;
+    }
+
+    .empty-state-icon {
+      width: 100px;
+      height: 100px;
+    }
+
+    .empty-state-icon svg {
+      width: 50px;
+      height: 50px;
+    }
+
+    .empty-state-features {
+      grid-template-columns: 1fr;
+    }
+
+    .empty-state-actions {
+      flex-direction: column;
+      align-items: stretch;
+    }
+  }
 </style>
 
 <!-- Data holder for alerts -->
@@ -258,8 +492,8 @@
         System Alerts
       </h1>
       <div class="header-subtitle">
-        <span class="status-indicator"></span>
-        <span>System Health Status</span>
+        <span class="status-indicator" id="statusIndicator"></span>
+        <span id="statusText">System Health Status</span>
       </div>
     </div>
   </header>
@@ -304,6 +538,7 @@
   </h2>
 
   {{#if alerts}}
+  {{#if (gt alerts.length 0)}}
   <div class="alerts-list">
     {{#each alerts}}
     <div
@@ -340,8 +575,106 @@
     {{/each}}
   </div>
   {{else}}
-  <div class="alert alert-info">
-    <p>No alerts found. Your system is running smoothly!</p>
+  <!-- Empty alerts state -->
+  <div class="card fade-in-up">
+    <div class="success-message">
+      <div class="success-message-icon">
+        <i data-lucide="shield-check"></i>
+      </div>
+      <div class="success-message-content">
+        <h3>All Systems Operational</h3>
+        <p>No alerts at this time. Your energy monitoring system is running smoothly!</p>
+      </div>
+    </div>
+
+    <div class="empty-state">
+      <div class="empty-state-icon">
+        <i data-lucide="check-circle"></i>
+      </div>
+      <h2>Everything Looks Great!</h2>
+      <p>Your smart meter is operating normally with no issues detected. You'll be notified here if any alerts
+        occur.</p>
+
+      <div class="empty-state-features">
+        <div class="empty-state-feature">
+          <div class="empty-state-feature-icon">
+            <i data-lucide="zap"></i>
+          </div>
+          <div class="empty-state-feature-content">
+            <h4>Power Monitoring</h4>
+            <p>Active monitoring for voltage and current anomalies</p>
+          </div>
+        </div>
+
+        <div class="empty-state-feature">
+          <div class="empty-state-feature-icon">
+            <i data-lucide="trending-up"></i>
+          </div>
+          <div class="empty-state-feature-content">
+            <h4>Usage Tracking</h4>
+            <p>Real-time tracking of energy consumption patterns</p>
+          </div>
+        </div>
+
+        <div class="empty-state-feature">
+          <div class="empty-state-feature-icon">
+            <i data-lucide="bell"></i>
+          </div>
+          <div class="empty-state-feature-content">
+            <h4>Smart Alerts</h4>
+            <p>Intelligent notifications for unusual activity</p>
+          </div>
+        </div>
+
+        <div class="empty-state-feature">
+          <div class="empty-state-feature-icon">
+            <i data-lucide="shield"></i>
+          </div>
+          <div class="empty-state-feature-content">
+            <h4>System Protection</h4>
+            <p>Automated detection of system health issues</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="empty-state-actions">
+        <button class="empty-state-btn" onclick="location.reload()">
+          <i data-lucide="refresh-cw"></i>
+          Refresh Alerts
+        </button>
+        <button class="empty-state-btn secondary" onclick="window.location.href='/user/dashboard'">
+          <i data-lucide="layout-dashboard"></i>
+          View Dashboard
+        </button>
+      </div>
+    </div>
+  </div>
+  {{/if}}
+  {{else}}
+  <!-- No alerts data at all -->
+  <div class="card fade-in-up">
+    <div class="empty-state">
+      <div class="empty-state-icon">
+        <i data-lucide="bell-off"></i>
+      </div>
+      <h2>No Alert Data Available</h2>
+      <p>Unable to retrieve alert information. This could be due to system initialization or connectivity issues.</p>
+
+      <div class="empty-state-actions">
+        <button class="empty-state-btn" onclick="location.reload()">
+          <i data-lucide="refresh-cw"></i>
+          Refresh Page
+        </button>
+        <button class="empty-state-btn secondary" onclick="window.location.href='/user/dashboard'">
+          <i data-lucide="layout-dashboard"></i>
+          Go to Dashboard
+        </button>
+        <!-- <button class="empty-state-btn secondary" onclick="window.location.href='/user/help'">
+          <i data-lucide="help-circle"></i>
+          Get Help
+        </button> -->
+      </div>
+    </div>
   </div>
   {{/if}}
 </div>
@@ -353,6 +686,8 @@
   const alertsDataElement = document.getElementById('alertsData');
   const alerts = JSON.parse(alertsDataElement.dataset.alerts || '[]');
 
+  console.log('📊 Alerts Data:', alerts);
+
   // Count each severity level
   const highCount = alerts.filter(a => a.severity === 'HIGH').length;
   const mediumCount = alerts.filter(a => a.severity === 'MEDIUM').length;
@@ -362,6 +697,30 @@
   document.getElementById('criticalCount').textContent = highCount;
   document.getElementById('warningCount').textContent = mediumCount;
   document.getElementById('lowCount').textContent = lowCount;
+
+  // ========================================
+  // UPDATE STATUS INDICATOR
+  // ========================================
+  const statusIndicator = document.getElementById('statusIndicator');
+  const statusText = document.getElementById('statusText');
+
+  if (alerts.length === 0) {
+    // No alerts - system healthy
+    statusIndicator.classList.add('healthy');
+    statusText.textContent = 'All Systems Operational';
+  } else if (highCount > 0) {
+    // Critical alerts present
+    statusIndicator.classList.add('critical');
+    statusText.textContent = `Critical: ${highCount} Alert${highCount > 1 ? 's' : ''} Require Attention`;
+  } else if (mediumCount > 0) {
+    // Warnings present
+    statusIndicator.classList.add('warning');
+    statusText.textContent = `Warning: ${mediumCount} Alert${mediumCount > 1 ? 's' : ''} Detected`;
+  } else {
+    // Only low priority alerts
+    statusIndicator.classList.add('healthy');
+    statusText.textContent = `Info: ${lowCount} Notification${lowCount > 1 ? 's' : ''}`;
+  }
 
   // ========================================
   // INITIALIZE LUCIDE ICONS

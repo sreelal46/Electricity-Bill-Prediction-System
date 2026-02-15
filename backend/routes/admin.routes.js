@@ -9,11 +9,13 @@ import db from "../config/firebase.js";
 const router = express.Router();
 import {
   loginPage,
-  verifyUser,
+  verifyAdmin,
+  logoutController,
   registrationPage,
   registration,
   dashboardController,
   allUsers,
+  markInstalled,
   latestReadingController,
   dailyUseage,
   allAlert,
@@ -25,7 +27,8 @@ router.use((req, res, next) => {
 });
 
 router.get("/login", loginPage);
-router.post("/login", verifyUser);
+router.post("/login", verifyAdmin);
+router.get("/logout", logoutController);
 
 router.get("/registration", registrationPage);
 router.post("/registration", registration);
@@ -38,6 +41,7 @@ router.get("/dashboard", dashboardController);
  * List all registered users
  */
 router.get("/users", allUsers);
+router.put("/users/:userId/mark-installed", markInstalled);
 
 /**
  * GET /admin/api/user/:userId/latest

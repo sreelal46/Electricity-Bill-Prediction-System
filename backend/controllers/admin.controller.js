@@ -3,12 +3,77 @@ import db from "../config/firebase.js";
 export const loginPage = async (req, res) => {
   res.status(200).render("admin/login", { layout: false });
 };
-export const verifyUser = async (req, res, next) => {
+// Logout Controller
+export const logoutController = (req, res) => {
+  // Destroy the session
+  req.session.destroy((err) => {
+    if (err) {
+      console.error("❌ Logout Error:", err);
+      return res.status(500).send("Error logging out");
+    }
+
+    // Clear the session cookie
+    res.clearCookie("connect.sid"); // Default session cookie name
+
+    // Redirect to home page
+    res.redirect("/");
+  });
+};
+export const verifyAdmin = async (req, res) => {
   try {
-    console.log(req.body);
-    req.session.user = { id: "USER001" };
-    res.redirect("/admin/dashboard");
-  } catch (error) {}
+    const { email, password } = req.body;
+
+    // Check required fields
+    if (!email || !password) {
+      return res.status(400).json({
+        success: false,
+        message: "Email and password are required",
+      });
+    }
+
+    // Query admin by email
+    const snapshot = await db
+      .ref("admin")
+      .orderByChild("email")
+      .equalTo(email)
+      .once("value");
+
+    if (!snapshot.exists()) {
+      return res.status(401).json({
+        success: false,
+        message: "Invalid email",
+      });
+    }
+
+    const admins = snapshot.val();
+    const adminId = Object.keys(admins)[0];
+    const adminData = admins[adminId];
+
+    // Check password
+    if (adminData.password !== password) {
+      return res.status(401).json({
+        success: false,
+        message: "Invalid password",
+      });
+    }
+
+    // Store session
+    req.session.admin = {
+      id: adminId,
+      email: adminData.email,
+    };
+
+    return res.status(200).json({
+      success: true,
+      redirect: "/admin/dashboard",
+    });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({
+      success: false,
+      message: "Server error",
+    });
+  }
 };
 export const registrationPage = async (req, res) => {
   res.status(200).render("admin/registration");
@@ -135,19 +200,41 @@ export const allUsers = async (req, res, next) => {
     res.status(500).json({ error: err.message });
   }
 };
+export const markInstalled = async (req, res, next) => {
+  const { userId } = req.params;
 
+  try {
+    if (!userId) {
+      return res.status(400).json({
+        success: false,
+        message: "User ID is required",
+      });
+    }
+
+    // Update only isInstalled field
+    await db.ref(`users/${userId}`).update({
+      isInstalled: true,
+      installedAt: new Date().toISOString(), // optional
+    });
+
+    res.status(200).json({
+      success: true,
+      message: "Installation marked successfully",
+    });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error",
+    });
+  }
+};
 export const latestReadingController = async (req, res, next) => {
   const { userId } = req.params;
   try {
     const snapshot = await db.ref(`latest_readings/${userId}`).once("value");
 
-    if (!snapshot.exists()) {
-      return res.status(404).json({ message: "No readings found" });
-    }
-
     const latest = snapshot.val();
-    // res.json(latest);
-    console.log(latest);
     res.render("admin/user-latest-readings", {
       title: "Latest Reading",
       latestReading: latest,

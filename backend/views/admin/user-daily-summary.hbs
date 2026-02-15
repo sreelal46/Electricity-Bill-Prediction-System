@@ -201,12 +201,18 @@
     border-color: var(--accent-blue);
   }
 
+  .period-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
   /* Chart Container */
   .chart-container {
     background: var(--bg-card);
     border-radius: var(--radius-md);
     padding: 2rem 1.5rem 1.5rem;
     height: 500px;
+    position: relative;
   }
 
   /* Stats Summary */
@@ -283,6 +289,115 @@
     color: var(--accent-purple);
   }
 
+  /* Empty State */
+  .empty-state {
+    text-align: center;
+    padding: 4rem 2rem;
+    color: var(--text-secondary);
+  }
+
+  .empty-state-icon {
+    width: 120px;
+    height: 120px;
+    margin: 0 auto 2rem;
+    background: var(--bg-secondary);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-secondary);
+  }
+
+  .empty-state-icon svg {
+    width: 60px;
+    height: 60px;
+  }
+
+  .empty-state h2 {
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 1rem;
+  }
+
+  .empty-state p {
+    font-size: 1.05rem;
+    color: var(--text-secondary);
+    margin-bottom: 2rem;
+    line-height: 1.6;
+  }
+
+  .empty-state-actions {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+
+  .empty-state-btn {
+    background: var(--accent-blue);
+    color: white;
+    padding: 0.875rem 1.75rem;
+    border-radius: var(--radius-sm);
+    border: none;
+    cursor: pointer;
+    font-size: 1rem;
+    font-family: 'DM Sans', sans-serif;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-weight: 500;
+    text-decoration: none;
+  }
+
+  .empty-state-btn:hover {
+    background: var(--accent-indigo);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+  }
+
+  .empty-state-btn.secondary {
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    border: 1px solid var(--border);
+  }
+
+  .empty-state-btn.secondary:hover {
+    background: var(--bg-card);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  }
+
+  .chart-empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    text-align: center;
+  }
+
+  .chart-empty-state svg {
+    width: 48px;
+    height: 48px;
+    color: var(--text-secondary);
+    margin-bottom: 1rem;
+    opacity: 0.5;
+  }
+
+  .chart-empty-state h3 {
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 0.5rem;
+  }
+
+  .chart-empty-state p {
+    font-size: 0.95rem;
+    color: var(--text-secondary);
+    margin: 0;
+  }
+
   /* Animations */
   @keyframes fadeInDown {
     from {
@@ -340,6 +455,16 @@
       gap: 1rem;
     }
 
+    .period-selector {
+      width: 100%;
+      flex-wrap: wrap;
+    }
+
+    .period-btn {
+      flex: 1;
+      min-width: 80px;
+    }
+
     .chart-container {
       height: 350px;
       padding: 1rem;
@@ -347,6 +472,29 @@
 
     .stats-summary {
       grid-template-columns: 1fr;
+    }
+
+    .empty-state h2 {
+      font-size: 1.5rem;
+    }
+
+    .empty-state p {
+      font-size: 0.95rem;
+    }
+
+    .empty-state-icon {
+      width: 100px;
+      height: 100px;
+    }
+
+    .empty-state-icon svg {
+      width: 50px;
+      height: 50px;
+    }
+
+    .empty-state-actions {
+      flex-direction: column;
+      align-items: stretch;
     }
   }
 </style>
@@ -405,7 +553,7 @@
       </div>
     </div>
 
-    <div class="chart-container">
+    <div class="chart-container" id="chartContainer">
       <canvas id="trendChart"></canvas>
     </div>
 
@@ -477,8 +625,27 @@
   const monthTrend = JSON.parse(dataContainer.getAttribute('data-month') || '[]');
   const todayReadings = JSON.parse(dataContainer.getAttribute('data-today') || '[]');
 
+  console.log('📊 Trend Data:', {
+    week: weekTrend.length,
+    _10days: _10dayTrend.length,
+    _2weeks: _2WeekTrend.length,
+    month: monthTrend.length,
+    today: todayReadings.length
+  });
+
   let currentChart = null;
   let currentPeriod = 'month';
+
+  // Check which datasets have data
+  const hasData = {
+    today: todayReadings && todayReadings.length > 0,
+    week: weekTrend && weekTrend.length > 0,
+    '10days': _10dayTrend && _10dayTrend.length > 0,
+    '2weeks': _2WeekTrend && _2WeekTrend.length > 0,
+    month: monthTrend && monthTrend.length > 0
+  };
+
+  const hasAnyData = Object.values(hasData).some(v => v);
 
   // Format date to show simple format based on period
   function formatDateLabel(dateStr, index, totalDays) {
@@ -502,8 +669,52 @@
     return `${hour.toString().padStart(2, '0')}:00`;
   }
 
+  // Show empty state in chart
+  function showChartEmptyState(message = 'No data available for this period') {
+    const container = document.getElementById('chartContainer');
+    const canvas = document.getElementById('trendChart');
+
+    // Hide canvas
+    canvas.style.display = 'none';
+
+    // Create or update empty state
+    let emptyState = container.querySelector('.chart-empty-state');
+    if (!emptyState) {
+      emptyState = document.createElement('div');
+      emptyState.className = 'chart-empty-state';
+      container.appendChild(emptyState);
+    }
+
+    emptyState.innerHTML = `
+      <i data-lucide="bar-chart-3"></i>
+      <h3>No Data Available</h3>
+      <p>${message}</p>
+    `;
+
+    // Reinitialize icons
+    if (typeof lucide !== 'undefined') {
+      lucide.createIcons();
+    }
+  }
+
+  // Hide empty state and show chart
+  function hideChartEmptyState() {
+    const container = document.getElementById('chartContainer');
+    const canvas = document.getElementById('trendChart');
+    const emptyState = container.querySelector('.chart-empty-state');
+
+    canvas.style.display = 'block';
+    if (emptyState) {
+      emptyState.remove();
+    }
+  }
+
   // Calculate statistics for daily data
   function calculateDailyStats(data) {
+    if (!data || data.length === 0) {
+      return { avg: 0, max: 0, min: 0, total: 0 };
+    }
+
     const values = data.map(d => d.total_units);
     const total = values.reduce((sum, val) => sum + val, 0);
     const avg = total / values.length;
@@ -557,6 +768,13 @@
 
   // Create hourly load profile chart (for Today view)
   function createHourlyChart(readings) {
+    if (!readings || readings.length === 0) {
+      showChartEmptyState('No readings available for today');
+      updateStats([], true);
+      return;
+    }
+
+    hideChartEmptyState();
     const ctx = document.getElementById('trendChart').getContext('2d');
 
     // Sort readings by timestamp
@@ -673,10 +891,19 @@
         }
       }
     });
+
+    updateStats(readings, true);
   }
 
   // Create daily bar chart
   function createDailyChart(data) {
+    if (!data || data.length === 0) {
+      showChartEmptyState('No data available for this period');
+      updateStats([], false);
+      return;
+    }
+
+    hideChartEmptyState();
     const ctx = document.getElementById('trendChart').getContext('2d');
 
     // Adjust bar thickness based on number of days
@@ -806,6 +1033,8 @@
         }
       }
     });
+
+    updateStats(data, false);
   }
 
   // Change period
@@ -828,35 +1057,30 @@
         title = "Today's Load Profile";
         subtitle = 'Hourly power consumption for today';
         createHourlyChart(data);
-        updateStats(data, true);
         break;
       case 'week':
         data = weekTrend;
         title = '7-Day Energy Trend';
         subtitle = 'Daily energy usage over the last 7 days';
         createDailyChart(data);
-        updateStats(data, false);
         break;
       case '10days':
         data = _10dayTrend;
         title = '10-Day Energy Trend';
         subtitle = 'Daily energy usage over the last 10 days';
         createDailyChart(data);
-        updateStats(data, false);
         break;
       case '2weeks':
         data = _2WeekTrend;
         title = '2-Week Energy Trend';
         subtitle = 'Daily energy usage over the last 2 weeks';
         createDailyChart(data);
-        updateStats(data, false);
         break;
       case 'month':
         data = monthTrend;
         title = 'Monthly Energy Trend';
         subtitle = 'Daily energy usage over the last 30 days';
         createDailyChart(data);
-        updateStats(data, false);
         break;
     }
 
@@ -866,14 +1090,42 @@
 
   // Initialize when DOM is loaded
   document.addEventListener('DOMContentLoaded', function () {
-    // Initialize with month view
-    changePeriod('today');
+    // Disable buttons for periods without data
+    document.querySelectorAll('.period-btn').forEach(btn => {
+      const period = btn.getAttribute('data-period');
+      if (!hasData[period]) {
+        btn.disabled = true;
+        btn.title = 'No data available for this period';
+      }
+    });
+
+    // Find first available period with data
+    let initialPeriod = 'month';
+    const periodPriority = ['today', 'week', '10days', '2weeks', 'month'];
+    for (const period of periodPriority) {
+      if (hasData[period]) {
+        initialPeriod = period;
+        break;
+      }
+    }
+
+    // Check if we have any data at all
+    if (!hasAnyData) {
+      console.warn('⚠️ No trend data available');
+      showChartEmptyState('No energy consumption data available. Start using your smart meter to see trends here.');
+      updateStats([], false);
+    } else {
+      console.log(`✅ Initializing with ${initialPeriod} view`);
+      changePeriod(initialPeriod);
+    }
 
     // Add event listeners to period buttons
     document.querySelectorAll('.period-btn').forEach(btn => {
       btn.addEventListener('click', function () {
-        const period = this.getAttribute('data-period');
-        changePeriod(period);
+        if (!this.disabled) {
+          const period = this.getAttribute('data-period');
+          changePeriod(period);
+        }
       });
     });
 

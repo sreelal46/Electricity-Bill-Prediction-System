@@ -1,94 +1,5 @@
 <!-- SIDEBAR PARTIAL - WITH LOGOUT CONFIRMATION -->
 <!-- File: views/partials/user-sidebar.hbs -->
-
-<aside class="sidebar">
-  <!-- Top Section -->
-  <div style="flex: 1; overflow-y: auto;">
-    <!-- Logo -->
-    <div class="sidebar-logo">
-      <div class="logo-icon">
-        <i data-lucide="zap"></i>
-      </div>
-      <span class="logo-text">EnergyGuard</span>
-    </div>
-
-    <!-- Navigation -->
-    <nav class="sidebar-nav">
-      <div class="nav-section">
-        <div class="nav-section-title">Main Menu</div>
-
-        <a href="/user/dashboard" class="nav-link {{#if (eq active 'dashboard')}}active{{/if}}">
-          <i data-lucide="layout-dashboard"></i>
-          <span>Dashboard</span>
-        </a>
-
-        <a href="/user/predictions" class="nav-link {{#if (eq active 'predictions')}}active{{/if}}">
-          <i data-lucide="brain-circuit"></i>
-          <span>AI Predictions</span>
-        </a>
-
-        <a href="/user/alerts" class="nav-link {{#if (eq active 'alerts')}}active{{/if}}">
-          <i data-lucide="bell"></i>
-          <span>Alerts</span>
-          {{#if alertCount}}
-          <span class="nav-badge">{{alertCount}}</span>
-          {{/if}}
-        </a>
-      </div>
-
-      <div class="nav-section">
-        <div class="nav-section-title">Account</div>
-
-        <a href="/user/profile" class="nav-link {{#if (eq active 'profile')}}active{{/if}}">
-          <i data-lucide="user-circle"></i>
-          <span>Profile</span>
-        </a>
-      </div>
-    </nav>
-  </div>
-
-  <!-- Bottom Section - User Info & Sign Out -->
-  <div class="sidebar-user">
-    <div class="user-info-card">
-      <div class="user-avatar">
-        {{#if user.initials}}
-        {{user.initials}}
-        {{else}}
-        U
-        {{/if}}
-      </div>
-      <div class="user-details">
-        <div class="user-name">{{#if user.name}}{{user.name}}{{else}}User{{/if}}</div>
-        <div class="user-role">{{#if user.role}}{{user.role}}{{else}}Consumer{{/if}}</div>
-      </div>
-    </div>
-
-    <button type="button" class="logout-link" id="logoutButton">
-      <i data-lucide="log-out"></i>
-      <span>Sign Out</span>
-    </button>
-  </div>
-</aside>
-
-<!-- Logout Confirmation Modal -->
-<div class="modal-overlay" id="logoutModal">
-  <div class="modal-container">
-    <div class="modal-icon">
-      <i data-lucide="log-out"></i>
-    </div>
-    <h2 class="modal-title">Confirm Logout</h2>
-    <p class="modal-message">Are you sure you want to sign out?</p>
-    <div class="modal-actions">
-      <button type="button" class="modal-btn modal-btn-cancel" id="cancelLogout">
-        Cancel
-      </button>
-      <button type="button" class="modal-btn modal-btn-confirm" id="confirmLogout">
-        Sign Out
-      </button>
-    </div>
-  </div>
-</div>
-
 <style>
   /* Modal Styles */
   .modal-overlay {
@@ -227,6 +138,95 @@
     height: 20px;
   }
 </style>
+<aside class="sidebar">
+  <!-- Top Section -->
+  <div style="flex: 1; overflow-y: auto;">
+    <!-- Logo -->
+    <div class="sidebar-logo">
+      <div class="logo-icon">
+        <i data-lucide="zap"></i>
+      </div>
+      <span class="logo-text">EnergyGuard</span>
+    </div>
+
+    <!-- Navigation -->
+    <nav class="sidebar-nav">
+      <div class="nav-section">
+        <div class="nav-section-title">Main Menu</div>
+
+        <a href="/user/dashboard" class="nav-link {{#if (eq active 'dashboard')}}active{{/if}}">
+          <i data-lucide="layout-dashboard"></i>
+          <span>Dashboard</span>
+        </a>
+
+        <a href="/user/predictions" class="nav-link {{#if (eq active 'predictions')}}active{{/if}}">
+          <i data-lucide="brain-circuit"></i>
+          <span>AI Predictions</span>
+        </a>
+
+        <a href="/user/alerts" class="nav-link {{#if (eq active 'alerts')}}active{{/if}}">
+          <i data-lucide="bell"></i>
+          <span>Alerts</span>
+          {{#if alertCount}}
+          <span class="nav-badge">{{alertCount}}</span>
+          {{/if}}
+        </a>
+      </div>
+
+      <div class="nav-section">
+        <div class="nav-section-title">Account</div>
+
+        <a href="/user/profile" class="nav-link {{#if (eq active 'profile')}}active{{/if}}">
+          <i data-lucide="user-circle"></i>
+          <span>Profile</span>
+        </a>
+      </div>
+    </nav>
+  </div>
+
+  <!-- Bottom Section - User Info & Sign Out -->
+  <div class="sidebar-user">
+    <!--<div class="user-info-card">
+      <div class="user-avatar">
+        {{#if user.initials}}
+        {{user.initials}}
+        {{else}}
+        U
+        {{/if}}
+      </div>
+      <div class="user-details">
+        <div class="user-name">{{#if user.name}}{{user.name}}{{else}}User{{/if}}</div>
+        <div class="user-role">{{#if user.role}}{{user.role}}{{else}}Consumer{{/if}}</div>
+      </div>
+    </div> -->
+
+    <button type="button" class="logout-link" id="logoutButton">
+      <i data-lucide="log-out"></i>
+      <span>Sign Out</span>
+    </button>
+  </div>
+</aside>
+
+<!-- Logout Confirmation Modal -->
+<div class="modal-overlay" id="logoutModal">
+  <div class="modal-container">
+    <div class="modal-icon">
+      <i data-lucide="log-out"></i>
+    </div>
+    <h2 class="modal-title">Confirm Logout</h2>
+    <p class="modal-message">Are you sure you want to sign out?</p>
+    <div class="modal-actions">
+      <button type="button" class="modal-btn modal-btn-cancel" id="cancelLogout">
+        Cancel
+      </button>
+      <button type="button" class="modal-btn modal-btn-confirm" id="confirmLogout">
+        Sign Out
+      </button>
+    </div>
+  </div>
+</div>
+
+
 
 <script>
   // Logout Modal Functionality

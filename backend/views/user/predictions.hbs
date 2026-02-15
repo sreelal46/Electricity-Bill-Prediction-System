@@ -36,6 +36,21 @@
     gap: 0.5rem;
   }
 
+  .status-indicator {
+    width: 8px;
+    height: 8px;
+    background: var(--accent-green);
+    border-radius: 50%;
+    animation: pulse 2s ease-in-out infinite;
+    box-shadow: 0 0 10px var(--accent-green);
+  }
+
+  .status-indicator.offline {
+    background: var(--text-secondary);
+    box-shadow: 0 0 10px var(--text-secondary);
+    animation: none;
+  }
+
   /* KPI Cards */
   .kpi-card {
     position: relative;
@@ -178,6 +193,156 @@
     font-weight: 600;
   }
 
+  /* Empty State */
+  .empty-state {
+    text-align: center;
+    padding: 4rem 2rem;
+    color: var(--text-secondary);
+  }
+
+  .empty-state-icon {
+    width: 120px;
+    height: 120px;
+    margin: 0 auto 2rem;
+    background: var(--bg-secondary);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-secondary);
+  }
+
+  .empty-state-icon svg {
+    width: 60px;
+    height: 60px;
+  }
+
+  .empty-state h2 {
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 1rem;
+  }
+
+  .empty-state p {
+    font-size: 1.05rem;
+    color: var(--text-secondary);
+    margin-bottom: 2rem;
+    max-width: 600px;
+    margin-left: auto;
+    margin-right: auto;
+    line-height: 1.6;
+  }
+
+  .empty-state-steps {
+    max-width: 500px;
+    margin: 0 auto 2rem;
+    text-align: left;
+  }
+
+  .empty-state-step {
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+    padding: 1rem;
+    background: var(--bg-secondary);
+    border-radius: 12px;
+    margin-bottom: 1rem;
+    border: 1px solid var(--border);
+  }
+
+  .empty-state-step-number {
+    width: 32px;
+    height: 32px;
+    background: var(--accent-blue);
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+
+  .empty-state-step-content h4 {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 0.25rem;
+  }
+
+  .empty-state-step-content p {
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+    margin: 0;
+    line-height: 1.5;
+  }
+
+  .empty-state-actions {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+
+  .empty-state-btn {
+    background: var(--accent-blue);
+    color: white;
+    padding: 0.875rem 1.75rem;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+    font-size: 1rem;
+    font-family: 'DM Sans', sans-serif;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-weight: 500;
+  }
+
+  .empty-state-btn:hover {
+    background: var(--accent-blue);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+  }
+
+  .empty-state-btn.secondary {
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    border: 1px solid var(--border);
+  }
+
+  .empty-state-btn.secondary:hover {
+    background: var(--bg-card);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  }
+
+  /* Small Empty State for Charts */
+  .chart-empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    padding: 1rem;
+    text-align: center;
+  }
+
+  .chart-empty-state svg {
+    width: 32px;
+    height: 32px;
+    color: var(--text-secondary);
+    margin-bottom: 0.5rem;
+    opacity: 0.5;
+  }
+
+  .chart-empty-state p {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    margin: 0;
+  }
+
   /* Animation delays */
   .card:nth-child(1) {
     animation-delay: 0.1s;
@@ -206,6 +371,32 @@
   .text-capitalize {
     text-transform: capitalize;
   }
+
+  /* Responsive */
+  @media (max-width: 768px) {
+    .empty-state h2 {
+      font-size: 1.5rem;
+    }
+
+    .empty-state p {
+      font-size: 0.95rem;
+    }
+
+    .empty-state-icon {
+      width: 100px;
+      height: 100px;
+    }
+
+    .empty-state-icon svg {
+      width: 50px;
+      height: 50px;
+    }
+
+    .empty-state-actions {
+      flex-direction: column;
+      align-items: stretch;
+    }
+  }
 </style>
 
 <!-- DATA HOLDER - Data attributes for JavaScript -->
@@ -222,16 +413,63 @@
         AI Forecasts
       </h1>
       <div class="header-subtitle">
-        <span class="status-indicator"></span>
-        <span>Machine learning powered predictions for energy consumption and costs</span>
+        <span class="status-indicator" id="statusIndicator"></span>
+        <span id="statusText">Machine learning powered predictions for energy consumption and costs</span>
       </div>
     </div>
   </header>
 
   {{#if noData}}
-  <div class="alert alert-warning">
-    <h3>No Data Available</h3>
-    <p>{{message}}</p>
+  <!-- FULL PAGE EMPTY STATE -->
+  <div class="card fade-in-up">
+    <div class="empty-state">
+      <div class="empty-state-icon">
+        <i data-lucide="brain-circuit"></i>
+      </div>
+      <h2>AI Predictions Not Available</h2>
+      <p>{{message}}</p>
+
+      <div class="empty-state-steps">
+        <div class="empty-state-step">
+          <div class="empty-state-step-number">1</div>
+          <div class="empty-state-step-content">
+            <h4>Connect Your Smart Meter</h4>
+            <p>Ensure your smart meter is properly connected and sending data to the system.</p>
+          </div>
+        </div>
+
+        <div class="empty-state-step">
+          <div class="empty-state-step-number">2</div>
+          <div class="empty-state-step-content">
+            <h4>Wait for Data Collection</h4>
+            <p>Our AI models need at least 7 days of historical data to generate accurate predictions.</p>
+          </div>
+        </div>
+
+        <div class="empty-state-step">
+          <div class="empty-state-step-number">3</div>
+          <div class="empty-state-step-content">
+            <h4>Check Back Later</h4>
+            <p>Once sufficient data is collected, predictions will appear here automatically.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="empty-state-actions">
+        <button class="empty-state-btn" onclick="location.reload()">
+          <i data-lucide="refresh-cw"></i>
+          Refresh Page
+        </button>
+        <button class="empty-state-btn secondary" onclick="window.location.href='/user/dashboard'">
+          <i data-lucide="layout-dashboard"></i>
+          Go to Dashboard
+        </button>
+        <!-- <button class="empty-state-btn secondary" onclick="window.location.href='/user/help'">
+          <i data-lucide="help-circle"></i>
+          Get Help
+        </button> -->
+      </div>
+    </div>
   </div>
   {{else}}
 
@@ -281,7 +519,7 @@
         </span>
         {{/if}}
       </div>
-      <div class="chart-container">
+      <div class="chart-container" id="dailyChartContainer">
         <canvas id="dailyChart"></canvas>
       </div>
     </div>
@@ -305,7 +543,7 @@
           {{predictions.weekly.prediction.weekly_prediction.end_date}}
         </span>
       </div>
-      <div class="chart-container">
+      <div class="chart-container" id="weeklyChartContainer">
         <canvas id="weeklyChart"></canvas>
       </div>
     </div>
@@ -326,7 +564,7 @@
         Monthly Bill: ₹{{predictions.monthly.prediction.predicted_monthly_bill}}<br>
         2-Month Bill: ₹{{predictions.monthly.prediction.predicted_2month_bill}}
       </div>
-      <div class="chart-container">
+      <div class="chart-container" id="monthlyChartContainer">
         <canvas id="monthlyChart"></canvas>
       </div>
     </div>
@@ -340,7 +578,7 @@
         7-Day Detailed Forecast
       </h3>
     </div>
-    <div class="table-wrapper">
+    <div class="table-wrapper" id="weeklyTableWrapper">
       <table>
         <thead>
           <tr>
@@ -349,7 +587,7 @@
             <th style="text-align: right;">Predicted Units (kWh)</th>
           </tr>
         </thead>
-        <tbody>
+        <tbody id="weeklyTableBody">
           {{#each predictions.weekly.prediction.weekly_prediction.predictions}}
           <tr>
             <td>{{this.date}}</td>
@@ -373,7 +611,7 @@
         Monthly Weekly Summaries
       </h3>
     </div>
-    <div class="grid grid-cols-4">
+    <div class="grid grid-cols-4" id="weeklySummariesGrid">
       {{#each predictions.monthly.prediction.monthly_prediction.weekly_summaries}}
       <div class="week-card">
         <div class="week-label">Week {{this.week}}</div>
@@ -522,149 +760,230 @@
 
   console.log('📊 Forecast Data:', { availableDays, daily, weekly, monthly });
 
+  // ========================================
+  // UPDATE STATUS INDICATOR
+  // ========================================
+  const statusIndicator = document.getElementById('statusIndicator');
+  const statusText = document.getElementById('statusText');
+
   // Check if we have valid prediction data
-  if (!daily.prediction || !weekly.prediction || !monthly.prediction) {
-    console.error('Missing prediction data from backend');
-  } else {
+  const hasValidData = daily.prediction && weekly.prediction && monthly.prediction;
+
+  if (!hasValidData) {
+    if (statusIndicator) {
+      statusIndicator.classList.add('offline');
+    }
+    if (statusText) {
+      statusText.textContent = 'Insufficient data for predictions';
+    }
+  }
+
+  // ========================================
+  // CREATE CHART EMPTY STATE
+  // ========================================
+  function createChartEmptyState(containerId) {
+    const container = document.getElementById(containerId);
+    if (container) {
+      container.innerHTML = `
+        <div class="chart-empty-state">
+          <i data-lucide="bar-chart-3"></i>
+          <p>No prediction data</p>
+        </div>
+      `;
+      lucide.createIcons();
+    }
+  }
+
+  // ========================================
+  // RENDER CHARTS OR EMPTY STATES
+  // ========================================
+  if (hasValidData) {
     // ========================================
     // DAILY CHART (Sparkline)
     // ========================================
-    const dailyValue = daily.prediction.next_day_units;
-    const dailyTrend = [
-      dailyValue * 0.92,
-      dailyValue * 0.95,
-      dailyValue * 0.90,
-      dailyValue * 0.98,
-      dailyValue * 0.96,
-      dailyValue * 1.02,
-      dailyValue
-    ];
+    try {
+      const dailyValue = daily.prediction.next_day_units;
+      const dailyTrend = [
+        dailyValue * 0.92,
+        dailyValue * 0.95,
+        dailyValue * 0.90,
+        dailyValue * 0.98,
+        dailyValue * 0.96,
+        dailyValue * 1.02,
+        dailyValue
+      ];
 
-    new Chart(document.getElementById('dailyChart'), {
-      type: 'line',
-      data: {
-        labels: Array(7).fill(''),
-        datasets: [{
-          data: dailyTrend,
-          borderColor: '#6366f1',
-          backgroundColor: 'rgba(99, 102, 241, 0.1)',
-          borderWidth: 2,
-          tension: 0.4,
-          fill: true,
-          pointRadius: 0,
-          pointHoverRadius: 4
-        }]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: { legend: { display: false }, tooltip: { enabled: false } },
-        scales: {
-          x: { display: false },
-          y: { display: false }
+      new Chart(document.getElementById('dailyChart'), {
+        type: 'line',
+        data: {
+          labels: Array(7).fill(''),
+          datasets: [{
+            data: dailyTrend,
+            borderColor: '#6366f1',
+            backgroundColor: 'rgba(99, 102, 241, 0.1)',
+            borderWidth: 2,
+            tension: 0.4,
+            fill: true,
+            pointRadius: 0,
+            pointHoverRadius: 4
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false }, tooltip: { enabled: false } },
+          scales: {
+            x: { display: false },
+            y: { display: false }
+          }
         }
-      }
-    });
+      });
+    } catch (error) {
+      console.error('Error rendering daily chart:', error);
+      createChartEmptyState('dailyChartContainer');
+    }
 
     // ========================================
     // WEEKLY CHART (Sparkline)
     // ========================================
-    const weeklyPredictions = weekly.prediction.weekly_prediction.predictions;
-    const weeklyData = weeklyPredictions.map(p => p.predicted_units);
-    const weeklyLabels = weeklyPredictions.map(p => p.day_name.substring(0, 3));
+    try {
+      const weeklyPredictions = weekly.prediction.weekly_prediction.predictions;
+      const weeklyData = weeklyPredictions.map(p => p.predicted_units);
+      const weeklyLabels = weeklyPredictions.map(p => p.day_name.substring(0, 3));
 
-    new Chart(document.getElementById('weeklyChart'), {
-      type: 'line',
-      data: {
-        labels: weeklyLabels,
-        datasets: [{
-          data: weeklyData,
-          borderColor: '#3b82f6',
-          backgroundColor: 'rgba(59, 130, 246, 0.1)',
-          borderWidth: 2,
-          tension: 0.4,
-          fill: true,
-          pointRadius: 3,
-          pointBackgroundColor: '#3b82f6',
-          pointBorderColor: '#fff',
-          pointBorderWidth: 1,
-          pointHoverRadius: 5
-        }]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-          legend: { display: false },
-          tooltip: {
-            backgroundColor: 'rgba(255, 255, 255, 0.98)',
-            titleColor: '#0f172a',
-            bodyColor: '#0f172a',
-            borderColor: 'rgba(148, 163, 184, 0.3)',
-            borderWidth: 1,
-            padding: 8,
-            displayColors: false,
-            callbacks: {
-              label: (context) => `${context.parsed.y.toFixed(2)} kWh`
-            }
-          }
+      new Chart(document.getElementById('weeklyChart'), {
+        type: 'line',
+        data: {
+          labels: weeklyLabels,
+          datasets: [{
+            data: weeklyData,
+            borderColor: '#3b82f6',
+            backgroundColor: 'rgba(59, 130, 246, 0.1)',
+            borderWidth: 2,
+            tension: 0.4,
+            fill: true,
+            pointRadius: 3,
+            pointBackgroundColor: '#3b82f6',
+            pointBorderColor: '#fff',
+            pointBorderWidth: 1,
+            pointHoverRadius: 5
+          }]
         },
-        scales: {
-          x: { display: false },
-          y: { display: false }
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              backgroundColor: 'rgba(255, 255, 255, 0.98)',
+              titleColor: '#0f172a',
+              bodyColor: '#0f172a',
+              borderColor: 'rgba(148, 163, 184, 0.3)',
+              borderWidth: 1,
+              padding: 8,
+              displayColors: false,
+              callbacks: {
+                label: (context) => `${context.parsed.y.toFixed(2)} kWh`
+              }
+            }
+          },
+          scales: {
+            x: { display: false },
+            y: { display: false }
+          }
         }
-      }
-    });
+      });
+    } catch (error) {
+      console.error('Error rendering weekly chart:', error);
+      createChartEmptyState('weeklyChartContainer');
+    }
 
     // ========================================
     // MONTHLY CHART (Weekly Summaries)
     // ========================================
-    const weeklySummaries = monthly.prediction.monthly_prediction.weekly_summaries;
-    const monthlyData = weeklySummaries.map(w => w.avg_daily_units);
-    const monthlyLabels = weeklySummaries.map(w => `W${w.week}`);
+    try {
+      const weeklySummaries = monthly.prediction.monthly_prediction.weekly_summaries;
+      const monthlyData = weeklySummaries.map(w => w.avg_daily_units);
+      const monthlyLabels = weeklySummaries.map(w => `W${w.week}`);
 
-    new Chart(document.getElementById('monthlyChart'), {
-      type: 'line',
-      data: {
-        labels: monthlyLabels,
-        datasets: [{
-          data: monthlyData,
-          borderColor: '#10b981',
-          backgroundColor: 'rgba(16, 185, 129, 0.1)',
-          borderWidth: 2,
-          tension: 0.4,
-          fill: true,
-          pointRadius: 4,
-          pointBackgroundColor: '#10b981',
-          pointBorderColor: '#fff',
-          pointBorderWidth: 1,
-          pointHoverRadius: 6
-        }]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-          legend: { display: false },
-          tooltip: {
-            backgroundColor: 'rgba(255, 255, 255, 0.98)',
-            titleColor: '#0f172a',
-            bodyColor: '#0f172a',
-            borderColor: 'rgba(148, 163, 184, 0.3)',
-            borderWidth: 1,
-            padding: 8,
-            displayColors: false,
-            callbacks: {
-              label: (context) => `${context.parsed.y.toFixed(2)} kWh/day`
-            }
-          }
+      new Chart(document.getElementById('monthlyChart'), {
+        type: 'line',
+        data: {
+          labels: monthlyLabels,
+          datasets: [{
+            data: monthlyData,
+            borderColor: '#10b981',
+            backgroundColor: 'rgba(16, 185, 129, 0.1)',
+            borderWidth: 2,
+            tension: 0.4,
+            fill: true,
+            pointRadius: 4,
+            pointBackgroundColor: '#10b981',
+            pointBorderColor: '#fff',
+            pointBorderWidth: 1,
+            pointHoverRadius: 6
+          }]
         },
-        scales: {
-          x: { display: false },
-          y: { display: false }
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              backgroundColor: 'rgba(255, 255, 255, 0.98)',
+              titleColor: '#0f172a',
+              bodyColor: '#0f172a',
+              borderColor: 'rgba(148, 163, 184, 0.3)',
+              borderWidth: 1,
+              padding: 8,
+              displayColors: false,
+              callbacks: {
+                label: (context) => `${context.parsed.y.toFixed(2)} kWh/day`
+              }
+            }
+          },
+          scales: {
+            x: { display: false },
+            y: { display: false }
+          }
         }
-      }
-    });
+      });
+    } catch (error) {
+      console.error('Error rendering monthly chart:', error);
+      createChartEmptyState('monthlyChartContainer');
+    }
+  } else {
+    // Show empty states for all charts
+    console.warn('Missing prediction data - showing empty states');
+    createChartEmptyState('dailyChartContainer');
+    createChartEmptyState('weeklyChartContainer');
+    createChartEmptyState('monthlyChartContainer');
+
+    // Show empty state in table if no weekly predictions
+    const tableBody = document.getElementById('weeklyTableBody');
+    if (tableBody && (!weekly.prediction || !weekly.prediction.weekly_prediction)) {
+      tableBody.innerHTML = `
+        <tr>
+          <td colspan="3" style="text-align: center; padding: 2rem; color: var(--text-secondary);">
+            <i data-lucide="inbox" style="width: 32px; height: 32px; margin-bottom: 0.5rem; opacity: 0.5;"></i><br>
+            No weekly predictions available
+          </td>
+        </tr>
+      `;
+      lucide.createIcons();
+    }
+
+    // Show empty state in weekly summaries if no monthly predictions
+    const summariesGrid = document.getElementById('weeklySummariesGrid');
+    if (summariesGrid && (!monthly.prediction || !monthly.prediction.monthly_prediction)) {
+      summariesGrid.innerHTML = `
+        <div style="grid-column: 1 / -1; text-align: center; padding: 2rem; color: var(--text-secondary);">
+          <i data-lucide="inbox" style="width: 32px; height: 32px; margin-bottom: 0.5rem; opacity: 0.5;"></i><br>
+          No monthly summaries available
+        </div>
+      `;
+      lucide.createIcons();
+    }
   }
 
   // ========================================

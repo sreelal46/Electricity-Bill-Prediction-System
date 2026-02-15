@@ -352,7 +352,7 @@
     font-family: "JetBrains Mono", monospace;
   }
 
-  /* No Alerts */
+  /* No Alerts / Empty State */
   .no-alerts {
     text-align: center;
     padding: 4rem 2rem;
@@ -363,8 +363,8 @@
   }
 
   .no-alerts-icon {
-    width: 80px;
-    height: 80px;
+    width: 120px;
+    height: 120px;
     margin: 0 auto 1.5rem;
     background: linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(16, 185, 129, 0.05) 100%);
     border-radius: 50%;
@@ -375,14 +375,124 @@
   }
 
   .no-alerts h2 {
-    font-size: 1.5rem;
+    font-size: 1.75rem;
+    font-weight: 700;
     color: var(--text-primary);
-    margin-bottom: 0.5rem;
+    margin-bottom: 1rem;
   }
 
   .no-alerts p {
     color: var(--text-secondary);
+    font-size: 1.05rem;
+    margin-bottom: 2rem;
+    line-height: 1.6;
+  }
+
+  .empty-state-features {
+    max-width: 600px;
+    margin: 0 auto 2rem;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1rem;
+    text-align: left;
+  }
+
+  .empty-state-feature {
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+    padding: 1rem;
+    background: var(--bg-secondary);
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border);
+    transition: all 0.2s ease;
+  }
+
+  .empty-state-feature:hover {
+    background: var(--bg-card);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-sm);
+  }
+
+  .empty-state-feature-icon {
+    width: 40px;
+    height: 40px;
+    background: rgba(16, 185, 129, 0.1);
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    color: var(--accent-green);
+  }
+
+  .empty-state-feature-icon svg {
+    width: 20px;
+    height: 20px;
+  }
+
+  .empty-state-feature-content h4 {
+    font-size: 0.9375rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 0.25rem;
+  }
+
+  .empty-state-feature-content p {
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+    margin: 0;
+    line-height: 1.5;
+  }
+
+  .empty-state-actions {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+
+  .empty-state-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.875rem 1.75rem;
+    border-radius: var(--radius-sm);
     font-size: 1rem;
+    font-weight: 500;
+    text-decoration: none;
+    transition: all 0.2s ease;
+    border: none;
+    cursor: pointer;
+    font-family: inherit;
+  }
+
+  .empty-state-btn.primary {
+    background: var(--accent-blue);
+    color: white;
+  }
+
+  .empty-state-btn.primary:hover {
+    background: var(--accent-indigo);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+  }
+
+  .empty-state-btn.secondary {
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    border: 1px solid var(--border);
+  }
+
+  .empty-state-btn.secondary:hover {
+    background: var(--bg-card);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  }
+
+  /* Placeholder for missing alert data */
+  .alert-message.placeholder {
+    color: var(--text-secondary);
+    font-style: italic;
   }
 
   /* Animations */
@@ -434,16 +544,43 @@
       align-items: flex-start;
       gap: 0.75rem;
     }
+
+    .no-alerts-icon {
+      width: 100px;
+      height: 100px;
+    }
+
+    .no-alerts h2 {
+      font-size: 1.5rem;
+    }
+
+    .no-alerts p {
+      font-size: 0.95rem;
+    }
+
+    .empty-state-features {
+      grid-template-columns: 1fr;
+    }
+
+    .empty-state-actions {
+      flex-direction: column;
+      align-items: stretch;
+    }
   }
 </style>
 
+<!-- Data holder for alerts status -->
+<div id="alertsData" data-has-alerts="{{#if alerts}}true{{else}}false{{/if}}"
+  data-alerts-count="{{#if alerts}}{{alerts.length}}{{else}}0{{/if}}" style="display: none;">
+</div>
+
 <div class="container">
   <div class="page-header">
-    <a href="/" class="back-link">
+    <a href="/admin/dashboard" class="back-link">
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
         <path d="M19 12H5M12 19l-7-7 7-7" />
       </svg>
-      Back to Home
+      Back to Dashboard
     </a>
     <h1>
       <i data-lucide="bell" style="width: 40px; height: 40px;"></i>
@@ -452,7 +589,8 @@
     <p class="subtitle">Monitor system alerts and important notifications</p>
   </div>
 
-  {{#if alerts.length}}
+  {{#if alerts}}
+  {{#if (gt alerts.length 0)}}
   <div class="alerts-grid">
     {{#each alerts}}
     <div class="alert-card severity-{{this.severity}} status-{{this.status}}">
@@ -473,21 +611,25 @@
             <i data-lucide="bell" style="width: 22px; height: 22px;"></i>
             {{/if}}
           </div>
-          <div class="alert-type">{{formatAlertType this.alert_type}}</div>
+          <div class="alert-type">
+            {{#if this.alert_type}}{{formatAlertType this.alert_type}}{{else}}Unknown Alert{{/if}}
+          </div>
         </div>
-        <span class="severity-badge">{{this.severity}}</span>
+        <span class="severity-badge">{{#if this.severity}}{{this.severity}}{{else}}UNKNOWN{{/if}}</span>
       </div>
 
       <div class="alert-body">
-        <div class="alert-message">
-          {{this.message}}
+        <div class="alert-message {{#unless this.message}}placeholder{{/unless}}">
+          {{#if this.message}}{{this.message}}{{else}}No message available{{/if}}
         </div>
 
-        <span class="status-badge {{this.status}}">{{this.status}}</span>
+        <span class="status-badge {{#if this.status}}{{this.status}}{{else}}pending{{/if}}">
+          {{#if this.status}}{{this.status}}{{else}}pending{{/if}}
+        </span>
 
         <div class="alert-time">
           <i data-lucide="clock"></i>
-          {{formatDate this.timestamp}}
+          {{#if this.timestamp}}{{formatDate this.timestamp}}{{else}}Unknown time{{/if}}
         </div>
       </div>
 
@@ -496,27 +638,88 @@
           <div class="alert-user-avatar">
             <i data-lucide="user" style="width: 12px; height: 12px;"></i>
           </div>
-          <span class="alert-user-name">{{this.user_name}}</span>
+          <span class="alert-user-name">{{#if this.user_name}}{{this.user_name}}{{else}}Unknown User{{/if}}</span>
           <span style="color: var(--border);">•</span>
-          <span>{{this.user_id}}</span>
+          <span>{{#if this.user_id}}{{this.user_id}}{{else}}N/A{{/if}}</span>
         </div>
-        <!-- <span class="alert-id">{{this.id}}</span> -->
       </div>
     </div>
     {{/each}}
   </div>
   {{else}}
+  <!-- Empty Alerts Array - All Clear State -->
   <div class="no-alerts">
     <div class="no-alerts-icon">
-      <i data-lucide="check-circle" style="width: 40px; height: 40px;"></i>
+      <i data-lucide="check-circle" style="width: 60px; height: 60px;"></i>
     </div>
     <h2>All Clear!</h2>
     <p>No active alerts at the moment. Your system is running smoothly.</p>
+
+    <div class="empty-state-features">
+      <div class="empty-state-feature">
+        <div class="empty-state-feature-icon">
+          <i data-lucide="shield-check"></i>
+        </div>
+        <div class="empty-state-feature-content">
+          <h4>System Monitored</h4>
+          <p>All meters are being actively monitored 24/7</p>
+        </div>
+      </div>
+
+      <div class="empty-state-feature">
+        <div class="empty-state-feature-icon">
+          <i data-lucide="bell"></i>
+        </div>
+        <div class="empty-state-feature-content">
+          <h4>Real-Time Alerts</h4>
+          <p>You'll be notified immediately if any issues arise</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="empty-state-actions">
+      <button class="empty-state-btn primary" onclick="location.reload()">
+        <i data-lucide="refresh-cw"></i>
+        <span>Refresh Alerts</span>
+      </button>
+      <a href="/admin/dashboard" class="empty-state-btn secondary">
+        <i data-lucide="layout-dashboard"></i>
+        <span>Back to Dashboard</span>
+      </a>
+    </div>
+  </div>
+  {{/if}}
+  {{else}}
+  <!-- No Alerts Data - Error State -->
+  <div class="no-alerts">
+    <div class="no-alerts-icon" style="background: rgba(239, 68, 68, 0.1); color: var(--accent-red);">
+      <i data-lucide="alert-circle" style="width: 60px; height: 60px;"></i>
+    </div>
+    <h2>Unable to Load Alerts</h2>
+    <p>There was a problem loading alert data. This might be a temporary issue.</p>
+
+    <div class="empty-state-actions">
+      <button class="empty-state-btn primary" onclick="location.reload()">
+        <i data-lucide="refresh-cw"></i>
+        <span>Refresh Page</span>
+      </button>
+      <a href="/admin/dashboard" class="empty-state-btn secondary">
+        <i data-lucide="layout-dashboard"></i>
+        <span>Back to Dashboard</span>
+      </a>
+    </div>
   </div>
   {{/if}}
 </div>
 
 <script>
+  // Get alerts data from data attributes
+  const alertsDataElement = document.getElementById('alertsData');
+  const hasAlerts = alertsDataElement.dataset.hasAlerts === 'true';
+  const alertsCount = parseInt(alertsDataElement.dataset.alertsCount || '0');
+
+  console.log('📊 Alerts Data:', { hasAlerts, alertsCount });
+
   // Initialize Lucide icons
   document.addEventListener('DOMContentLoaded', function () {
     if (typeof lucide !== 'undefined') {

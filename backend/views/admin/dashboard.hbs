@@ -1,6 +1,199 @@
 <!-- ADMIN DASHBOARD -->
 <link rel="stylesheet" href="/css/admin-dashboard.css">
 
+<style>
+  /* Empty State Styles */
+  .empty-state {
+    text-align: center;
+    padding: 3rem 2rem;
+    color: var(--text-secondary);
+  }
+
+  .empty-state-icon {
+    width: 80px;
+    height: 80px;
+    margin: 0 auto 1.5rem;
+    background: var(--bg-secondary);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-secondary);
+  }
+
+  .empty-state-icon svg {
+    width: 40px;
+    height: 40px;
+  }
+
+  .empty-state h3 {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 0.5rem;
+  }
+
+  .empty-state p {
+    font-size: 0.95rem;
+    color: var(--text-secondary);
+    margin-bottom: 1.5rem;
+    line-height: 1.6;
+  }
+
+  .empty-state-actions {
+    display: flex;
+    gap: 0.75rem;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+
+  .empty-state-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.625rem 1.25rem;
+    border-radius: 8px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    text-decoration: none;
+    transition: all 0.2s ease;
+    border: none;
+    cursor: pointer;
+    font-family: inherit;
+  }
+
+  .empty-state-btn.primary {
+    background: var(--accent-blue);
+    color: white;
+  }
+
+  .empty-state-btn.primary:hover {
+    background: var(--accent-indigo);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+  }
+
+  .empty-state-btn.secondary {
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    border: 1px solid var(--border);
+  }
+
+  .empty-state-btn.secondary:hover {
+    background: var(--bg-card);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  }
+
+  /* Table empty state */
+  .table-empty-state {
+    padding: 2rem;
+    text-align: center;
+  }
+
+  .table-empty-state svg {
+    width: 48px;
+    height: 48px;
+    color: var(--text-secondary);
+    opacity: 0.5;
+    margin-bottom: 1rem;
+  }
+
+  .table-empty-state h4 {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 0.5rem;
+  }
+
+  .table-empty-state p {
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+    margin: 0;
+  }
+
+  /* Stat card placeholder */
+  .stat-value.placeholder {
+    color: var(--text-secondary);
+    opacity: 0.5;
+  }
+
+  /* Status indicator states */
+  .system-status {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    background: var(--bg-secondary);
+    border-radius: 999px;
+    font-size: 0.875rem;
+    font-weight: 500;
+  }
+
+  .system-status.operational {
+    background: rgba(16, 185, 129, 0.1);
+    color: var(--accent-green);
+  }
+
+  .system-status.no-data {
+    background: rgba(148, 163, 184, 0.1);
+    color: var(--text-secondary);
+  }
+
+  .status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: currentColor;
+  }
+
+  .system-status.operational .status-dot {
+    animation: pulse 2s ease-in-out infinite;
+  }
+
+  @keyframes pulse {
+
+    0%,
+    100% {
+      opacity: 1;
+    }
+
+    50% {
+      opacity: 0.5;
+    }
+  }
+
+  /* Responsive */
+  @media (max-width: 768px) {
+    .empty-state-icon {
+      width: 64px;
+      height: 64px;
+    }
+
+    .empty-state-icon svg {
+      width: 32px;
+      height: 32px;
+    }
+
+    .empty-state h3 {
+      font-size: 1.125rem;
+    }
+
+    .empty-state p {
+      font-size: 0.875rem;
+    }
+
+    .empty-state-actions {
+      flex-direction: column;
+      align-items: stretch;
+    }
+  }
+</style>
+
+<!-- Data holder for dashboard status -->
+<div id="dashboardData" data-has-users="{{#if users}}true{{else}}false{{/if}}" data-total-users="{{totalUsers}}"
+  data-total-alerts="{{totalAlerts}}" style="display: none;">
+</div>
+
 <div class="container">
   <!-- Dashboard Header -->
   <div class="dashboard-header">
@@ -8,14 +201,8 @@
       <h1>System Overview</h1>
       <p>Real-time monitoring of user activity and system health.</p>
     </div>
-    <div class="header-right">
-      <div class="system-status">
-        <span class="status-dot"></span>
-        <span>System Operational</span>
-      </div>
-      <button class="close-btn" onclick="window.location.href='/'">
-        <i data-lucide="x"></i>
-      </button>
+    <div class="header-right" id="headerStatus">
+      <!-- Status will be dynamically updated -->
     </div>
   </div>
 
@@ -26,54 +213,22 @@
         <div class="stat-icon blue">
           <i data-lucide="users"></i>
         </div>
-        <!-- <div class="stat-change positive">
-          <i data-lucide="arrow-up"></i>
-          <span>+12%</span>
-        </div> -->
       </div>
-      <div class="stat-value">{{totalUsers}}</div>
+      <div class="stat-value {{#unless totalUsers}}placeholder{{/unless}}">
+        {{#if totalUsers}}{{totalUsers}}{{else}}0{{/if}}
+      </div>
       <div class="stat-label">Total Users</div>
     </div>
-
-    <!-- <div class="stat-card">
-      <div class="stat-header">
-        <div class="stat-icon green">
-          <i data-lucide="activity"></i>
-        </div>
-        <div class="stat-change positive">
-          <i data-lucide="arrow-up"></i>
-          <span>+5%</span>
-        </div>
-      </div>
-      <div class="stat-value">843</div>
-      <div class="stat-label">Active Now</div>
-    </div> -->
-
-    <!-- <div class="stat-card">
-      <div class="stat-header">
-        <div class="stat-icon orange">
-          <i data-lucide="zap"></i>
-        </div>
-        <div class="stat-change negative">
-          <i data-lucide="arrow-down"></i>
-          <span>-2.4%</span>
-        </div>
-      </div>
-      <div class="stat-value">45.2 MWh</div>
-      <div class="stat-label">Total Consumption</div>
-    </div> -->
 
     <div class="stat-card">
       <div class="stat-header">
         <div class="stat-icon red">
           <i data-lucide="bell"></i>
         </div>
-        <!-- <div class="stat-change negative">
-          <i data-lucide="arrow-up"></i>
-          <span>+4</span>
-        </div> -->
       </div>
-      <div class="stat-value">{{totalAlerts}}</div>
+      <div class="stat-value {{#unless totalAlerts}}placeholder{{/unless}}">
+        {{#if totalAlerts}}{{totalAlerts}}{{else}}0{{/if}}
+      </div>
       <div class="stat-label">Active Alerts</div>
     </div>
   </div>
@@ -87,6 +242,8 @@
         Recent User Registrations
       </h2>
 
+      {{#if users}}
+      {{#if (gt users.length 0)}}
       <table class="registrations-table">
         <thead>
           <tr>
@@ -101,86 +258,86 @@
           <tr>
             <td>
               <div class="user-cell">
-                <span class="user-name">{{this.user_name}}</span>
-                <span class="user-email">{{this.email}}</span>
+                <span class="user-name">{{#if this.name}}{{this.name}}{{else}}Unknown User{{/if}}</span>
+                <span class="user-email">{{#if this.email}}{{this.email}}{{else}}No email{{/if}}</span>
               </div>
             </td>
             <td>
-              <span class="status-badge active">{{this.status}}</span>
+              {{#if this.isInstalled}}
+              <span class="status-badge active">Yes</span>
+              {{else}}
+              <span class="status-badge pending">No</span>
+              {{/if}}
             </td>
-            <td class="date-cell">{{formatDate this.registration_date}}</td>
-            <td class="plan-cell">{{this.approved_phase}}</td>
+            <td class="date-cell">
+              {{#if this.registration_date}}{{formatDate this.registration_date}}{{else}}—{{/if}}
+            </td>
+            <td class="plan-cell">{{#if this.approved_phase}}{{this.approved_phase}}{{else}}—{{/if}}</td>
           </tr>
           {{/each}}
         </tbody>
       </table>
-    </div>
-
-    <!-- Recent Alerts -->
-    <!-- <div class="content-card">
-      <h2 class="card-title">
-        <i data-lucide="bell"></i>
-        Recent Alerts
-      </h2>
-
-      <div class="alerts-list">
-        <div class="alert-item warning">
-          <div class="alert-icon">
-            <i data-lucide="alert-triangle"></i>
-          </div>
-          <div class="alert-content">
-            <div class="alert-title">Peak demand threshold approaching (92%)</div>
-            <div class="alert-time">10:42 AM</div>
-          </div>
-          <button class="alert-close">
-            <i data-lucide="x"></i>
-          </button>
+      {{else}}
+      <!-- Empty users array -->
+      <div class="table-empty-state">
+        <i data-lucide="user-plus"></i>
+        <h4>No Users Registered</h4>
+        <p>No users have registered yet. New registrations will appear here.</p>
+      </div>
+      {{/if}}
+      {{else}}
+      <!-- No users data -->
+      <div class="empty-state">
+        <div class="empty-state-icon">
+          <i data-lucide="users"></i>
         </div>
-
-        <div class="alert-item danger">
-          <div class="alert-icon">
-            <i data-lucide="alert-circle"></i>
-          </div>
-          <div class="alert-content">
-            <div class="alert-title">Main grid connection instability detected</div>
-            <div class="alert-time">09:15 AM</div>
-          </div>
-          <button class="alert-close">
-            <i data-lucide="x"></i>
+        <h3>No User Data Available</h3>
+        <p>Unable to load user registration data. This might be a temporary issue.</p>
+        <div class="empty-state-actions">
+          <button class="empty-state-btn primary" onclick="location.reload()">
+            <i data-lucide="refresh-cw"></i>
+            Refresh Page
           </button>
-        </div>
-
-        <div class="alert-item info">
-          <div class="alert-icon">
-            <i data-lucide="info"></i>
-          </div>
-          <div class="alert-content">
-            <div class="alert-title">Weekly maintenance scheduled for tomorrow</div>
-            <div class="alert-time">Yesterday</div>
-          </div>
-          <button class="alert-close">
-            <i data-lucide="x"></i>
-          </button>
-        </div>
-
-        <div class="alert-item warning">
-          <div class="alert-icon">
-            <i data-lucide="alert-triangle"></i>
-          </div>
-          <div class="alert-content">
-            <div class="alert-title">Power factor below 0.85 in Sector 4</div>
-            <div class="alert-time">Yesterday</div>
-          </div>
-          <button class="alert-close">
-            <i data-lucide="x"></i>
-          </button>
+          <a href="/admin/users" class="empty-state-btn secondary">
+            <i data-lucide="users"></i>
+            View All Users
+          </a>
         </div>
       </div>
-    </div> -->
+      {{/if}}
+    </div>
   </div>
 </div>
 
 <script>
+  // Get dashboard data from data attributes
+  const dashboardDataElement = document.getElementById('dashboardData');
+  const hasUsers = dashboardDataElement.dataset.hasUsers === 'true';
+  const totalUsers = parseInt(dashboardDataElement.dataset.totalUsers || '0');
+  const totalAlerts = parseInt(dashboardDataElement.dataset.totalAlerts || '0');
+
+  console.log('📊 Dashboard Data:', { hasUsers, totalUsers, totalAlerts });
+
+  // Update header status based on data availability
+  const headerStatus = document.getElementById('headerStatus');
+  if (headerStatus) {
+    if (hasUsers && totalUsers > 0) {
+      headerStatus.innerHTML = `
+        <div class="system-status operational">
+          <span class="status-dot"></span>
+          <span>System Operational</span>
+        </div>
+      `;
+    } else {
+      headerStatus.innerHTML = `
+        <div class="system-status no-data">
+          <span class="status-dot"></span>
+          <span>No Data Available</span>
+        </div>
+      `;
+    }
+  }
+
   // Initialize Lucide icons
   lucide.createIcons();
 
