@@ -26,16 +26,16 @@
         <div class="stat-icon blue">
           <i data-lucide="users"></i>
         </div>
-        <div class="stat-change positive">
+        <!-- <div class="stat-change positive">
           <i data-lucide="arrow-up"></i>
           <span>+12%</span>
-        </div>
+        </div> -->
       </div>
       <div class="stat-value">{{totalUsers}}</div>
       <div class="stat-label">Total Users</div>
     </div>
 
-    <div class="stat-card">
+    <!-- <div class="stat-card">
       <div class="stat-header">
         <div class="stat-icon green">
           <i data-lucide="activity"></i>
@@ -47,9 +47,9 @@
       </div>
       <div class="stat-value">843</div>
       <div class="stat-label">Active Now</div>
-    </div>
+    </div> -->
 
-    <div class="stat-card">
+    <!-- <div class="stat-card">
       <div class="stat-header">
         <div class="stat-icon orange">
           <i data-lucide="zap"></i>
@@ -61,17 +61,17 @@
       </div>
       <div class="stat-value">45.2 MWh</div>
       <div class="stat-label">Total Consumption</div>
-    </div>
+    </div> -->
 
     <div class="stat-card">
       <div class="stat-header">
         <div class="stat-icon red">
           <i data-lucide="bell"></i>
         </div>
-        <div class="stat-change negative">
+        <!-- <div class="stat-change negative">
           <i data-lucide="arrow-up"></i>
           <span>+4</span>
-        </div>
+        </div> -->
       </div>
       <div class="stat-value">{{totalAlerts}}</div>
       <div class="stat-label">Active Alerts</div>
@@ -97,64 +97,27 @@
           </tr>
         </thead>
         <tbody>
+          {{#each users}}
           <tr>
             <td>
               <div class="user-cell">
-                <span class="user-name">Sarah Wilson</span>
-                <span class="user-email">sarah@example.com</span>
+                <span class="user-name">{{this.user_name}}</span>
+                <span class="user-email">{{this.email}}</span>
               </div>
             </td>
             <td>
-              <span class="status-badge active">Active</span>
+              <span class="status-badge active">{{this.status}}</span>
             </td>
-            <td class="date-cell">Just now</td>
-            <td class="plan-cell">Enterprise</td>
+            <td class="date-cell">{{formatDate this.registration_date}}</td>
+            <td class="plan-cell">{{this.approved_phase}}</td>
           </tr>
-          <tr>
-            <td>
-              <div class="user-cell">
-                <span class="user-name">Mike Johnson</span>
-                <span class="user-email">mike@example.com</span>
-              </div>
-            </td>
-            <td>
-              <span class="status-badge pending">Pending</span>
-            </td>
-            <td class="date-cell">2 hrs ago</td>
-            <td class="plan-cell">Basic</td>
-          </tr>
-          <tr>
-            <td>
-              <div class="user-cell">
-                <span class="user-name">Tech Solutions Inc</span>
-                <span class="user-email">admin@techsol.com</span>
-              </div>
-            </td>
-            <td>
-              <span class="status-badge active">Active</span>
-            </td>
-            <td class="date-cell">5 hrs ago</td>
-            <td class="plan-cell">Pro</td>
-          </tr>
-          <tr>
-            <td>
-              <div class="user-cell">
-                <span class="user-name">Green Energy Co</span>
-                <span class="user-email">contact@green.co</span>
-              </div>
-            </td>
-            <td>
-              <span class="status-badge active">Active</span>
-            </td>
-            <td class="date-cell">1 day ago</td>
-            <td class="plan-cell">Enterprise</td>
-          </tr>
+          {{/each}}
         </tbody>
       </table>
     </div>
 
     <!-- Recent Alerts -->
-    <div class="content-card">
+    <!-- <div class="content-card">
       <h2 class="card-title">
         <i data-lucide="bell"></i>
         Recent Alerts
@@ -213,7 +176,7 @@
           </button>
         </div>
       </div>
-    </div>
+    </div> -->
   </div>
 </div>
 

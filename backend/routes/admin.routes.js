@@ -11,6 +11,7 @@ import {
   loginPage,
   verifyUser,
   registrationPage,
+  registration,
   dashboardController,
   allUsers,
   latestReadingController,
@@ -27,6 +28,7 @@ router.get("/login", loginPage);
 router.post("/login", verifyUser);
 
 router.get("/registration", registrationPage);
+router.post("/registration", registration);
 /**
  * GET /admin/dashboard
  */

@@ -7,14 +7,113 @@ export const loginPage = (req, res) => {
 
 export const verifyUser = async (req, res, next) => {
   try {
-    console.log(req.body);
-    req.session.user = { id: "USER001" };
-    res.redirect("/user/dashboard");
-  } catch (error) {}
+    const { consumerNumber } = req.body;
+
+    if (!consumerNumber) {
+      return res.status(400).json({
+        success: false,
+        message: "Consumer number is required",
+      });
+    }
+
+    //Query Firebase by consumerNumber
+    const snapshot = await db
+      .ref("users")
+      .orderByChild("consumerNumber")
+      .equalTo(consumerNumber)
+      .once("value");
+
+    if (!snapshot.exists()) {
+      return res.status(401).json({
+        success: false,
+        message: "Invalid consumer number",
+      });
+    }
+
+    // Get first matched user
+    const users = snapshot.val();
+    const userId = Object.keys(users)[0]; // Firebase auto ID
+
+    //Store in session
+    req.session.user = {
+      id: userId,
+    };
+
+    return res.redirect("/user/dashboard");
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({
+      success: false,
+      message: "Server error",
+    });
+  }
+};
+
+export const registration = async (req, res, next) => {
+  try {
+    const {
+      name,
+      consumerNumber,
+      phoneNumber,
+      email,
+      address,
+      approvedLoad,
+      phaseType,
+    } = req.body;
+
+    if (!consumerNumber) {
+      return res.status(400).json({
+        success: false,
+        message: "Consumer number is required",
+      });
+    }
+
+    // 🔍 Check if consumerNumber already exists
+    const existingUserSnapshot = await db
+      .ref("users")
+      .orderByChild("consumerNumber")
+      .equalTo(consumerNumber)
+      .once("value");
+
+    if (existingUserSnapshot.exists()) {
+      return res.status(400).json({
+        success: false,
+        message: "Consumer number already registered",
+      });
+    }
+
+    // ✅ If not exists → create new user
+    const newRef = db.ref("users").push();
+
+    await newRef.set({
+      id: newRef.key,
+      name,
+      consumerNumber,
+      phoneNumber,
+      email,
+      address,
+      approved_load_kw: approvedLoad,
+      approved_phase: phaseType,
+      isInstalled: false,
+      registration_date: new Date().toISOString(),
+      createdAt: new Date().toISOString(),
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: "Registration successful",
+    });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error",
+    });
+  }
 };
 
 export const registerPage = (req, res) => {
-  res.status(200).render("user/register", { layout: false });
+  res.status(200).render("user/registration", { layout: false });
 };
 
 export const dashboardController = async (req, res) => {
@@ -40,7 +139,7 @@ export const dashboardController = async (req, res) => {
     // Sort by date
     allDailyData.sort((a, b) => new Date(a.date) - new Date(b.date));
 
-    // ✅ FIX: Keep only last 7 days
+    //  Keep only last 7 days
     const dailyTrend = allDailyData.slice(-7);
 
     // Get latest reading from daily data
@@ -59,7 +158,7 @@ export const dashboardController = async (req, res) => {
       readingSnap.forEach((child) => {
         const reading = child.val();
 
-        // ✅ FIX: Filter readings for TODAY only
+        // Filter readings for TODAY only
         if (reading.timestamp && reading.timestamp.startsWith(today)) {
           todayReadings.push({
             id: child.key,
@@ -72,16 +171,16 @@ export const dashboardController = async (req, res) => {
     // Sort by timestamp
     todayReadings.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
 
-    console.log("📊 Dashboard Data Summary:", {
-      dailyTrendCount: dailyTrend.length,
-      todayReadingsCount: todayReadings.length,
-      hasLatestReading: !!latestReading,
-      dateRange:
-        dailyTrend.length > 0
-          ? `${dailyTrend[0].date} to ${dailyTrend[dailyTrend.length - 1].date}`
-          : "No data",
-      todayDate: today,
-    });
+    // console.log("📊 Dashboard Data Summary:", {
+    //   dailyTrendCount: dailyTrend.length,
+    //   todayReadingsCount: todayReadings.length,
+    //   hasLatestReading: !!latestReading,
+    //   dateRange:
+    //     dailyTrend.length > 0
+    //       ? `${dailyTrend[0].date} to ${dailyTrend[dailyTrend.length - 1].date}`
+    //       : "No data",
+    //   todayDate: today,
+    // });
 
     /* ===============================
        RENDER DASHBOARD VIEW

@@ -461,3 +461,138 @@
     grid-template-columns: 1fr;
   }
 }
+* Installation Pending Styles */ .installation-pending {
+  padding: 1.5rem;
+  background: linear-gradient(
+    135deg,
+    rgba(249, 115, 22, 0.05) 0%,
+    rgba(249, 115, 22, 0.02) 100%
+  );
+  border-top: 1px solid rgba(148, 163, 184, 0.2);
+  border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+}
+
+.pending-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+}
+
+.pending-icon {
+  width: 48px;
+  height: 48px;
+  background: linear-gradient(
+    135deg,
+    rgba(249, 115, 22, 0.1) 0%,
+    rgba(249, 115, 22, 0.05) 100%
+  );
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.pending-icon i {
+  width: 24px;
+  height: 24px;
+  color: var(--accent-orange);
+}
+
+.pending-text h4 {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 0.25rem;
+}
+
+.pending-text p {
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+.installation-question {
+  background: var(--bg-card);
+  padding: 1rem;
+  border-radius: var(--radius-md);
+  border: 1px solid rgba(148, 163, 184, 0.2);
+}
+
+.question-text {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  font-size: 0.9375rem;
+  margin-bottom: 1rem;
+}
+
+.question-text i {
+  width: 18px;
+  height: 18px;
+  color: var(--accent-blue);
+}
+
+.installation-actions {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.install-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  border-radius: var(--radius-sm);
+  font-weight: 600;
+  font-size: 0.9375rem;
+  text-decoration: none;
+  transition: all 0.2s ease;
+  cursor: pointer;
+  border: none;
+  font-family: "DM Sans", sans-serif;
+}
+
+.install-btn i {
+  width: 18px;
+  height: 18px;
+}
+
+.install-btn.confirm {
+  background: linear-gradient(135deg, var(--accent-green) 0%, #059669 100%);
+  color: white;
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
+}
+
+.install-btn.confirm:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
+}
+
+.install-btn.cancel {
+  background: var(--bg-secondary);
+  color: var(--text-secondary);
+  border: 1px solid rgba(148, 163, 184, 0.2);
+}
+
+.install-btn.cancel:hover {
+  background: var(--bg-card);
+  border-color: var(--accent-red);
+  color: var(--accent-red);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .installation-actions {
+    flex-direction: column;
+  }
+
+  .install-btn {
+    width: 100%;
+  }
+}

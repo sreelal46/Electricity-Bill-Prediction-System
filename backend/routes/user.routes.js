@@ -10,6 +10,7 @@ import {
   loginPage,
   verifyUser,
   registerPage,
+  registration,
   predictPage,
   profilePage,
   dashboardController,
@@ -30,7 +31,8 @@ const router = express.Router();
 router.get("/login", loginPage);
 router.post("/login", verifyUser);
 
-router.get("/register", registerPage);
+router.get("/registration", registerPage);
+router.post("/registration", registration);
 router.get("/dashboard", dashboardController);
 
 router.get("/predictions", predictPage);

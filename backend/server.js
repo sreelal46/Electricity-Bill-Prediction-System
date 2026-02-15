@@ -108,6 +108,12 @@ app.engine(
         if (!str) return "";
         return str.substring(start, end).toUpperCase();
       },
+      formatAlertType: function (alertType) {
+        return alertType
+          .split("_")
+          .map((word) => word.charAt(0) + word.slice(1).toLowerCase())
+          .join(" ");
+      },
     },
   }),
 );

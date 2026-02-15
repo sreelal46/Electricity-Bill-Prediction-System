@@ -30,7 +30,7 @@
           <h2 class="user-id">{{latestReading.user_id}}</h2>
           <p class="reading-time">
             <i data-lucide="clock"></i>
-            {{latestReading.timestamp}}
+            {{formatDate latestReading.timestamp}}
           </p>
         </div>
       </div>
@@ -127,7 +127,7 @@
             <i data-lucide="calendar"></i>
             <div class="info-content">
               <span class="info-label">Timestamp</span>
-              <span class="info-value">{{latestReading.timestamp}}</span>
+              <span class="info-value">{{formatDate latestReading.timestamp}}</span>
             </div>
           </div>
           <div class="info-row">
@@ -137,13 +137,13 @@
               <span class="info-value">{{latestReading.user_id}}</span>
             </div>
           </div>
-          <div class="info-row">
+          <!-- <div class="info-row">
             <i data-lucide="hash"></i>
             <div class="info-content">
               <span class="info-label">Reading ID</span>
               <span class="info-value">{{latestReading.id}}</span>
             </div>
-          </div>
+          </div> -->
         </div>
       </div>
     </div>

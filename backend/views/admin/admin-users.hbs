@@ -120,10 +120,17 @@
             <p class="user-id">ID: {{user_id}}</p>
           </div>
         </div>
-        <span class="status-badge {{status}}">
-          <i data-lucide="{{#if (eq status 'active')}}check-circle{{else}}x-circle{{/if}}"></i>
-          {{status}}
+        {{#if isInstalled}}
+        <span class="status-badge active">
+          <i data-lucide="check-circle"></i>
+          Active
         </span>
+        {{else}}
+        <span class="status-badge inactive">
+          <i data-lucide="x-circle"></i>
+          Inactive
+        </span>
+        {{/if}}
       </div>
 
       <!-- Card Body -->
@@ -154,11 +161,11 @@
           </div>
           <div class="detail-content">
             <span class="detail-label">Registered</span>
-            <span class="detail-value">{{registration_date}}</span>
+            <span class="detail-value">{{formatDate registration_date}}</span>
           </div>
         </div>
       </div>
-
+      {{#if isInstalled}}
       <!-- Card Footer -->
       <div class="user-actions">
         <a href="/admin/user/{{user_id}}/latest" class="action-btn primary">
@@ -170,6 +177,33 @@
           <span>Daily Summary</span>
         </a>
       </div>
+      {{else}}
+      <!-- Installation Pending Section -->
+      <div class="installation-pending">
+        <div class="pending-header">
+          <div class="pending-icon">
+            <i data-lucide="clock"></i>
+          </div>
+          <div class="pending-text">
+            <h4>Installation Pending</h4>
+            <p>Meter installation is not yet completed for this consumer</p>
+          </div>
+        </div>
+
+        <div class="installation-question">
+          <span class="question-text">
+            <i data-lucide="help-circle"></i>
+            Installation completed?
+          </span>
+          <div class="installation-actions">
+            <a href="/admin/user/{{user_id}}/mark-installed" class="install-btn confirm">
+              <i data-lucide="check-circle"></i>
+              <span>Yes</span>
+            </a>
+          </div>
+        </div>
+      </div>
+      {{/if}}
     </div>
     {{/each}}
   </div>

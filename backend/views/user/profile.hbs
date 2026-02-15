@@ -385,7 +385,15 @@
             <i data-lucide="plug"></i>
             Connection Details
           </h3>
-
+          <div class="info-item">
+            <div class="info-icon">
+              <i data-lucide="hash"></i>
+            </div>
+            <div class="info-text">
+              <div class="info-label">Consumer Number</div>
+              <div class="info-value">{{formatDate user.registration_date}}</div>
+            </div>
+          </div>
           <div class="info-item">
             <div class="info-icon">
               <i data-lucide="zap"></i>
@@ -413,21 +421,6 @@
             <div class="info-text">
               <div class="info-label">Registration Date</div>
               <div class="info-value">{{formatDate user.registration_date}}</div>
-            </div>
-          </div>
-
-          <div class="info-item">
-            <div class="info-icon">
-              <i data-lucide="shield-check"></i>
-            </div>
-            <div class="info-text">
-              <div class="info-label">Account Status</div>
-              <div class="info-value">
-                <span class="status-badge {{user.status}}">
-                  <i data-lucide="{{#if (eq user.status 'active')}}check-circle{{else}}x-circle{{/if}}"></i>
-                  {{user.status}}
-                </span>
-              </div>
             </div>
           </div>
         </div>
