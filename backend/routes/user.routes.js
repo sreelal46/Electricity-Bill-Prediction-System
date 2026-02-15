@@ -22,7 +22,7 @@ const router = express.Router();
 router.get("/login", loginPage);
 router.post("/login", verifyUser);
 
-router.get("/registration", checkSession, registerPage);
+router.get("/registration", registerPage);
 router.post("/registration", registration);
 router.get("/dashboard", checkSession, dashboardController);
 

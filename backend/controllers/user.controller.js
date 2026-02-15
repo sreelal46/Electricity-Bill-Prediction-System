@@ -12,11 +12,13 @@ export const checkSession = (req, res, next) => {
 export const loginPage = (req, res) => {
   res.status(200).render("user/login", { layout: false });
 };
+// Clean verifyUser controller - Production ready (no debug logs)
 
-export const verifyUser = async (req, res, next) => {
+export const verifyUser = async (req, res) => {
   try {
     const { consumerNumber, phone } = req.body;
 
+    // Validation
     if (!consumerNumber || !phone) {
       return res.status(400).json({
         success: false,
@@ -24,52 +26,111 @@ export const verifyUser = async (req, res, next) => {
       });
     }
 
-    // Query by consumerNumber
-    const snapshot = await db
-      .ref("users")
-      .orderByChild("consumerNumber")
-      .equalTo(consumerNumber)
-      .once("value");
+    // Get all users from Firebase
+    const allUsersSnapshot = await db.ref("users").once("value");
 
-    if (!snapshot.exists()) {
+    if (!allUsersSnapshot.exists()) {
+      return res.status(500).json({
+        success: false,
+        message: "No users registered in the system",
+      });
+    }
+
+    const allUsers = allUsersSnapshot.val();
+
+    // Convert input to both string and number for comparison
+    const inputAsString = String(consumerNumber);
+    const inputAsNumber = Number(consumerNumber);
+
+    let foundUser = null;
+    let foundUserId = null;
+
+    // Search for user with flexible matching
+    for (const [userId, userData] of Object.entries(allUsers)) {
+      const dbConsumerNumber = userData.consumerNumber;
+      const dbAsString = String(dbConsumerNumber);
+      const dbAsNumber = Number(dbConsumerNumber);
+
+      // Try multiple matching strategies
+      if (
+        dbConsumerNumber === consumerNumber ||
+        dbConsumerNumber === inputAsNumber ||
+        dbAsString === inputAsString ||
+        dbAsNumber === inputAsNumber ||
+        dbAsString.toLowerCase() === inputAsString.toLowerCase() ||
+        dbAsString.trim() === inputAsString.trim()
+      ) {
+        foundUser = userData;
+        foundUserId = userId;
+        break;
+      }
+    }
+
+    if (!foundUser) {
       return res.status(401).json({
         success: false,
         message: "Invalid consumer number",
       });
     }
 
-    const users = snapshot.val();
-    const userId = Object.keys(users)[0];
-    const userData = users[userId];
+    // Validate phone number
+    const dbPhone = foundUser.phoneNumber;
+    const cleanDbPhone = String(dbPhone).replace(/\D/g, "");
+    const cleanInputPhone = String(phone).replace(/\D/g, "");
 
-    // Check phone number
-    if (userData.phoneNumber !== phone) {
+    const phoneMatch =
+      dbPhone === phone ||
+      String(dbPhone) === String(phone) ||
+      cleanDbPhone === cleanInputPhone ||
+      Number(dbPhone) === Number(phone);
+
+    if (!phoneMatch) {
       return res.status(401).json({
         success: false,
         message: "Invalid phone number",
       });
     }
 
-    // Get alerts count only
-    const alertSnapshot = await db.ref(`user_alerts/${userId}`).once("value");
-
+    // Get alerts count
+    const alertSnapshot = await db
+      .ref(`user_alerts/${foundUserId}`)
+      .once("value");
     const alertsObj = alertSnapshot.val();
     const alertLength = alertsObj ? Object.keys(alertsObj).length : 0;
 
-    //Store session
+    // Create session
     req.session.user = {
-      id: userId,
+      id: foundUserId,
       alertLength,
+      consumerNumber: foundUser.consumerNumber,
+      name: foundUser.name,
+      phone: foundUser.phoneNumber,
+      email: foundUser.email,
+      approved_phase: foundUser.approved_phase,
+      approved_load_kw: foundUser.approved_load_kw,
+      address: foundUser.address,
+      isInstalled: foundUser.isInstalled,
     };
+
+    // Save session
+    await new Promise((resolve, reject) => {
+      req.session.save((err) => {
+        if (err) reject(err);
+        else resolve();
+      });
+    });
+
     return res.status(200).json({
       success: true,
-      redirect: "/user/dashboard",
+      redirectUrl: "/user/dashboard",
+      message: "Login successful",
     });
   } catch (error) {
-    console.error(error);
+    console.error("Login error:", error.message);
+
     return res.status(500).json({
       success: false,
-      message: "Server error",
+      message: "Server error during login",
     });
   }
 };
@@ -129,7 +190,6 @@ export const registration = async (req, res, next) => {
       message: "Registration successful",
     });
   } catch (error) {
-    console.error(error);
     return res.status(500).json({
       success: false,
       message: "Internal server error",
@@ -211,7 +271,6 @@ export const dashboardController = async (req, res) => {
       todayReadings,
     });
   } catch (err) {
-    console.error("❌ Dashboard Error:", err);
     res.status(500).send(err.message);
   }
 };
@@ -254,15 +313,13 @@ export const profilePage = async (req, res, next) => {
     }
 
     const user = snapshot.val();
-    console.log(user);
+
     // Render profile page with user data
     res.render("user/profile", {
       title: "User Profile",
       user,
     });
   } catch (error) {
-    console.error("Profile Page Error:", error);
-
     res.status(500).render("500", {
       title: "Server Error",
       message: "Something went wrong while loading profile",
@@ -336,7 +393,6 @@ export const predictPage = async (req, res, next) => {
         };
       }
     } catch (error) {
-      console.error("Daily prediction error:", error.message);
       results.predictions.daily = {
         error: "Failed to generate daily prediction",
         details: error.message,
@@ -384,7 +440,6 @@ export const predictPage = async (req, res, next) => {
         };
       }
     } catch (error) {
-      console.error("Weekly prediction error:", error.message);
       results.predictions.weekly = {
         error: "Failed to generate weekly prediction",
         details: error.message,
@@ -435,7 +490,6 @@ export const predictPage = async (req, res, next) => {
         };
       }
     } catch (error) {
-      console.error("Monthly prediction error:", error.message);
       results.predictions.monthly = {
         error: "Failed to generate monthly prediction",
         details: error.message,
@@ -445,7 +499,6 @@ export const predictPage = async (req, res, next) => {
     // Render the predictions page with all data
     res.render("user/predictions", results);
   } catch (error) {
-    console.error("Predictions page error:", error.message);
     res.status(500).render("error", {
       error: "Server error while generating predictions",
       details: error.message,
@@ -458,7 +511,6 @@ export const logoutController = (req, res) => {
   // Destroy the session
   req.session.destroy((err) => {
     if (err) {
-      console.error("❌ Logout Error:", err);
       return res.status(500).send("Error logging out");
     }
 
