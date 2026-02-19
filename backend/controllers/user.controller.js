@@ -160,7 +160,7 @@ export const registration = async (req, res, next) => {
       });
     }
 
-    // 🔍 Check if consumerNumber already exists
+    // Check if consumerNumber already exists
     const existingUserSnapshot = await db
       .ref("users")
       .orderByChild("consumerNumber")
@@ -174,7 +174,7 @@ export const registration = async (req, res, next) => {
       });
     }
 
-    // ✅ If not exists → create new user
+    // If not exists → create new user
     const newRef = db.ref("users").push();
 
     await newRef.set({
@@ -194,6 +194,7 @@ export const registration = async (req, res, next) => {
     return res.status(200).json({
       success: true,
       message: "Registration successful",
+      redirectUrl: "/",
     });
   } catch (error) {
     return res.status(500).json({

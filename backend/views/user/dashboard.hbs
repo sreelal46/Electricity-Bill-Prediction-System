@@ -1,954 +1,132 @@
+<link rel="stylesheet" href="/css/user-dashboard.css">
+
+
+<!-- DATA HOLDER - NOW POPULATED BY SERVER VIA HANDLEBARS -->
+<div id="dashboardData" data-daily='{{{dailyTrendJSON}}}' data-latest='{{{latestReadingJSON}}}'
+  data-today='{{{todayReadingsJSON}}}'>
+</div>
+
+<div class="container">
+  <!-- HEADER -->
+  <header class="header">
+    <div class="header-content">
+      <h1 style="display: flex; align-items: center; gap: 0.5rem;">
+        <i data-lucide="zap" style="width: 32px; height: 32px;"></i>
+        Energy Dashboard
+      </h1>
+      <div class="header-subtitle">
+        <span class="status-indicator" id="statusIndicator"></span>
+        <span id="statusText">Live Monitoring</span>
+      </div>
+    </div>
+    <div class="last-updated">
+      Last updated: <span id="lastUpdate">--</span>
+    </div>
+  </header>
+
+  <!-- KPI CARDS -->
+  <div class="kpi-grid">
+    <div class="kpi-card">
+      <div class="kpi-label">
+        <div class="kpi-icon" style="background: rgba(59, 130, 246, 0.1); color: var(--accent-blue);">
+          <i data-lucide="zap"></i>
+        </div>
+        Current Power
+      </div>
+      <div class="kpi-value" id="currentPower">--</div>
+      <div class="kpi-change neutral" id="powerChange">Real-time monitoring</div>
+    </div>
+
+    <div class="kpi-card">
+      <div class="kpi-label">
+        <div class="kpi-icon" style="background: rgba(251, 191, 36, 0.1); color: var(--accent-yellow);">
+          <i data-lucide="bar-chart-3"></i>
+        </div>
+        Today's Usage
+      </div>
+      <div class="kpi-value" id="todayUnits">--</div>
+      <div class="kpi-change" id="todayChange">--</div>
+    </div>
+
+    <div class="kpi-card">
+      <div class="kpi-label">
+        <div class="kpi-icon" style="background: rgba(239, 68, 68, 0.1); color: var(--accent-red);">
+          <i data-lucide="flame"></i>
+        </div>
+        Peak Demand
+      </div>
+      <div class="kpi-value" id="peak">--</div>
+      <div class="kpi-change neutral" id="peakTime">Today's maximum</div>
+    </div>
+
+    <div class="kpi-card">
+      <div class="kpi-label">
+        <div class="kpi-icon" style="background: rgba(16, 185, 129, 0.1); color: var(--accent-green);">
+          <i data-lucide="trending-up"></i>
+        </div>
+        Monthly Total
+      </div>
+      <div class="kpi-value" id="consumption">--</div>
+      <div class="kpi-change" id="monthlyChange">--</div>
+    </div>
+  </div>
+
+  <!-- CHARTS -->
+  <div class="charts-grid">
+    <div class="chart-card">
+      <div class="chart-header">
+        <h3 class="chart-title">7-Day Energy Trend</h3>
+        <div class="chart-controls">
+          <button class="chart-btn active">Week</button>
+        </div>
+      </div>
+      <div class="chart-container" id="dailyChartContainer">
+        <canvas id="dailyChart"></canvas>
+      </div>
+    </div>
+
+    <div class="chart-card">
+      <div class="chart-header">
+        <h3 class="chart-title">Today's Load Profile</h3>
+        <div class="chart-controls">
+          <button class="chart-btn active">Power</button>
+        </div>
+      </div>
+      <div class="chart-container" id="loadChartContainer">
+        <canvas id="loadChart"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- TABLE -->
+  <div class="table-card">
+    <div class="table-header">
+      <h3 class="table-title">Recent Readings</h3>
+      <!-- <input type="text" class="search-box" placeholder="Search readings..." id="searchBox"> -->
+    </div>
+    <div class="table-wrapper">
+      <table>
+        <thead>
+          <tr>
+            <th>Time</th>
+            <th>Voltage (V)</th>
+            <th>Current (A)</th>
+            <th>Power (W)</th>
+            <th>Energy (kWh)</th>
+          </tr>
+        </thead>
+        <tbody id="readingsTable">
+          <tr>
+            <td colspan="5" class="loading">
+              <div class="spinner"></div>
+              Loading data...
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
 <script src="https://unpkg.com/lucide@latest"></script>
-<style>
-  /* HEADER */
-  .header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 3rem;
-    animation: slideDown 0.6s ease-out;
-  }
-
-
-  .header-content h1 {
-    font-size: 2.5rem;
-    font-weight: 700;
-    background: linear-gradient(135deg, var(--text-primary) 0%, var(--accent-blue) 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-    margin-bottom: 0.5rem;
-  }
-
-  .header-subtitle {
-    color: var(--text-secondary);
-    font-size: 1rem;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-  }
-
-  .status-indicator {
-    width: 8px;
-    height: 8px;
-    background: var(--accent-green);
-    border-radius: 50%;
-    animation: pulse 2s ease-in-out infinite;
-    box-shadow: 0 0 10px var(--accent-green);
-  }
-
-  .status-indicator.offline {
-    background: var(--text-secondary);
-    box-shadow: 0 0 10px var(--text-secondary);
-    animation: none;
-  }
-
-
-  .last-updated {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 0.875rem;
-    color: var(--text-secondary);
-    background: var(--bg-card);
-    padding: 0.75rem 1.25rem;
-    border-radius: 12px;
-    border: 1px solid var(--border);
-  }
-
-  /* KPI CARDS */
-  .kpi-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-    gap: 1.5rem;
-    margin-bottom: 3rem;
-  }
-
-  .kpi-card {
-    background: var(--bg-card);
-    border: 1px solid var(--border);
-    border-radius: 16px;
-    padding: 1.75rem;
-    position: relative;
-    overflow: hidden;
-    transition: all 0.3s ease;
-    animation: fadeInUp 0.6s ease-out backwards;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-  }
-
-  .kpi-card:nth-child(1) {
-    animation-delay: 0.1s;
-  }
-
-  .kpi-card:nth-child(2) {
-    animation-delay: 0.2s;
-  }
-
-  .kpi-card:nth-child(3) {
-    animation-delay: 0.3s;
-  }
-
-  .kpi-card:nth-child(4) {
-    animation-delay: 0.4s;
-  }
-
-
-  .kpi-card:hover {
-    transform: translateY(-4px);
-    border-color: var(--accent-blue);
-    box-shadow: 0 12px 40px rgba(59, 130, 246, 0.2), 0 4px 12px rgba(0, 0, 0, 0.08);
-  }
-
-  .kpi-card::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 3px;
-    background: linear-gradient(90deg, var(--accent-blue), var(--accent-green));
-    opacity: 0;
-    transition: opacity 0.3s ease;
-  }
-
-  .kpi-card:hover::before {
-    opacity: 1;
-  }
-
-  .kpi-label {
-    font-size: 0.875rem;
-    color: var(--text-secondary);
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    margin-bottom: 0.75rem;
-    font-weight: 500;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-  }
-
-  .kpi-icon {
-    width: 32px;
-    height: 32px;
-    border-radius: 8px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 1.25rem;
-  }
-
-  .kpi-icon svg {
-    width: 18px;
-    height: 18px;
-  }
-
-  .kpi-value {
-    font-size: 2.25rem;
-    font-weight: 700;
-    font-family: 'JetBrains Mono', monospace;
-    margin-bottom: 0.5rem;
-    color: var(--text-primary);
-    line-height: 1;
-    display: flex;
-    align-items: baseline;
-    gap: 0.5rem;
-    flex-wrap: wrap;
-  }
-
-  .kpi-unit {
-    font-size: 1.5rem;
-    font-weight: 600;
-    color: var(--text-secondary);
-  }
-
-  .kpi-change {
-    font-size: 0.875rem;
-    display: flex;
-    align-items: center;
-    gap: 0.25rem;
-  }
-
-  .kpi-change.positive {
-    color: var(--accent-green);
-  }
-
-  .kpi-change.negative {
-    color: var(--accent-red);
-  }
-
-  .kpi-change.neutral {
-    color: var(--text-secondary);
-  }
-
-  /* CHARTS */
-  .charts-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
-    gap: 1.5rem;
-    margin-bottom: 3rem;
-  }
-
-  .chart-card {
-    background: var(--bg-card);
-    border: 1px solid var(--border);
-    border-radius: 16px;
-    padding: 2rem;
-    animation: fadeInUp 0.6s ease-out backwards;
-    animation-delay: 0.5s;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-  }
-
-  .chart-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 1.5rem;
-  }
-
-  .chart-title {
-    font-size: 1.125rem;
-    font-weight: 600;
-    color: var(--text-primary);
-  }
-
-  .chart-controls {
-    display: flex;
-    gap: 0.5rem;
-  }
-
-  .chart-btn {
-    background: var(--bg-secondary);
-    border: 1px solid var(--border);
-    color: var(--text-secondary);
-    padding: 0.5rem 1rem;
-    border-radius: 8px;
-    cursor: pointer;
-    font-size: 0.875rem;
-    transition: all 0.2s ease;
-    font-family: 'DM Sans', sans-serif;
-  }
-
-  .chart-btn:hover,
-  .chart-btn.active {
-    background: var(--accent-blue);
-    color: white;
-    border-color: var(--accent-blue);
-  }
-
-  .chart-container {
-    position: relative;
-    height: 300px;
-  }
-
-  /* TABLE */
-  .table-card {
-    background: var(--bg-card);
-    border: 1px solid var(--border);
-    border-radius: 16px;
-    padding: 2rem;
-    animation: fadeInUp 0.6s ease-out backwards;
-    animation-delay: 0.6s;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-  }
-
-  .table-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 1.5rem;
-  }
-
-  .table-title {
-    font-size: 1.125rem;
-    font-weight: 600;
-    color: var(--text-primary);
-  }
-
-  .search-box {
-    background: var(--bg-secondary);
-    border: 1px solid var(--border);
-    color: var(--text-primary);
-    padding: 0.5rem 1rem;
-    border-radius: 8px;
-    font-size: 0.875rem;
-    width: 250px;
-    font-family: 'DM Sans', sans-serif;
-    transition: all 0.2s ease;
-  }
-
-  .search-box:focus {
-    outline: none;
-    border-color: var(--accent-blue);
-    box-shadow: 0 0 0 3px var(--glow);
-  }
-
-  .table-wrapper {
-    overflow-x: auto;
-    border-radius: 12px;
-    border: 1px solid var(--border);
-  }
-
-
-  .time-badge {
-    background: var(--bg-secondary);
-    padding: 0.25rem 0.75rem;
-    border-radius: 6px;
-    display: inline-block;
-    font-size: 0.875rem;
-  }
-
-  /* LOADING STATE */
-  .loading {
-    text-align: center;
-    padding: 3rem;
-    color: var(--text-secondary);
-  }
-
-  .spinner {
-    border: 3px solid var(--border);
-    border-top: 3px solid var(--accent-blue);
-    border-radius: 50%;
-    width: 40px;
-    height: 40px;
-    animation: spin 1s linear infinite;
-    margin: 0 auto 1rem;
-  }
-
-  /* EMPTY STATE */
-  .empty-state {
-    text-align: center;
-    padding: 3rem 1rem;
-    color: var(--text-secondary);
-  }
-
-  .empty-state-icon {
-    width: 80px;
-    height: 80px;
-    margin: 0 auto 1.5rem;
-    background: var(--bg-secondary);
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: var(--text-secondary);
-  }
-
-  .empty-state-icon svg {
-    width: 40px;
-    height: 40px;
-  }
-
-  .empty-state h3 {
-    font-size: 1.25rem;
-    font-weight: 600;
-    color: var(--text-primary);
-    margin-bottom: 0.5rem;
-  }
-
-  .empty-state p {
-    font-size: 0.95rem;
-    color: var(--text-secondary);
-    margin-bottom: 1.5rem;
-  }
-
-  .empty-state-actions {
-    display: flex;
-    gap: 1rem;
-    justify-content: center;
-    flex-wrap: wrap;
-  }
-
-  .empty-state-btn {
-    background: var(--accent-blue);
-    color: white;
-    padding: 0.75rem 1.5rem;
-    border-radius: 8px;
-    border: none;
-    cursor: pointer;
-    font-size: 0.95rem;
-    font-family: 'DM Sans', sans-serif;
-    transition: all 0.2s ease;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-  }
-
-  .empty-state-btn:hover {
-    background: var(--accent-blue);
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
-  }
-
-  .empty-state-btn.secondary {
-    background: var(--bg-secondary);
-    color: var(--text-primary);
-    border: 1px solid var(--border);
-  }
-
-  .empty-state-btn.secondary:hover {
-    background: var(--bg-card);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  }
-
-  @keyframes spin {
-    0% {
-      transform: rotate(0deg);
-    }
-
-    100% {
-      transform: rotate(360deg);
-    }
-  }
-
-  /* RESPONSIVE */
-  @media (max-width: 768px) {
-    .container {
-      padding: 1rem;
-    }
-
-    .header {
-      flex-direction: column;
-      align-items: flex-start;
-      gap: 1rem;
-    }
-
-    .header-content h1 {
-      font-size: 1.75rem;
-    }
-
-    .charts-grid {
-      grid-template-columns: 1fr;
-    }
-
-    .kpi-grid {
-      grid-template-columns: 1fr;
-    }
-
-    .chart-controls {
-      flex-wrap: wrap;
-    }
-
-    .search-box {
-      width: 100%;
-    }
-
-    .empty-state-actions {
-      flex-direction: column;
-      align-items: stretch;
-    }
-  }
-</style>
-</head>
-
-<body>
-  <!-- DATA HOLDER - NOW POPULATED BY SERVER VIA HANDLEBARS -->
-  <div id="dashboardData" data-daily='{{{dailyTrendJSON}}}' data-latest='{{{latestReadingJSON}}}'
-    data-today='{{{todayReadingsJSON}}}'>
-  </div>
-
-  <div class="container">
-    <!-- HEADER -->
-    <header class="header">
-      <div class="header-content">
-        <h1 style="display: flex; align-items: center; gap: 0.5rem;">
-          <i data-lucide="zap" style="width: 32px; height: 32px;"></i>
-          Energy Dashboard
-        </h1>
-        <div class="header-subtitle">
-          <span class="status-indicator" id="statusIndicator"></span>
-          <span id="statusText">Live Monitoring</span>
-        </div>
-      </div>
-      <div class="last-updated">
-        Last updated: <span id="lastUpdate">--</span>
-      </div>
-    </header>
-
-    <!-- KPI CARDS -->
-    <div class="kpi-grid">
-      <div class="kpi-card">
-        <div class="kpi-label">
-          <div class="kpi-icon" style="background: rgba(59, 130, 246, 0.1); color: var(--accent-blue);">
-            <i data-lucide="zap"></i>
-          </div>
-          Current Power
-        </div>
-        <div class="kpi-value" id="currentPower">--</div>
-        <div class="kpi-change neutral" id="powerChange">Real-time monitoring</div>
-      </div>
-
-      <div class="kpi-card">
-        <div class="kpi-label">
-          <div class="kpi-icon" style="background: rgba(251, 191, 36, 0.1); color: var(--accent-yellow);">
-            <i data-lucide="bar-chart-3"></i>
-          </div>
-          Today's Usage
-        </div>
-        <div class="kpi-value" id="todayUnits">--</div>
-        <div class="kpi-change" id="todayChange">--</div>
-      </div>
-
-      <div class="kpi-card">
-        <div class="kpi-label">
-          <div class="kpi-icon" style="background: rgba(239, 68, 68, 0.1); color: var(--accent-red);">
-            <i data-lucide="flame"></i>
-          </div>
-          Peak Demand
-        </div>
-        <div class="kpi-value" id="peak">--</div>
-        <div class="kpi-change neutral" id="peakTime">Today's maximum</div>
-      </div>
-
-      <div class="kpi-card">
-        <div class="kpi-label">
-          <div class="kpi-icon" style="background: rgba(16, 185, 129, 0.1); color: var(--accent-green);">
-            <i data-lucide="trending-up"></i>
-          </div>
-          Monthly Total
-        </div>
-        <div class="kpi-value" id="consumption">--</div>
-        <div class="kpi-change" id="monthlyChange">--</div>
-      </div>
-    </div>
-
-    <!-- CHARTS -->
-    <div class="charts-grid">
-      <div class="chart-card">
-        <div class="chart-header">
-          <h3 class="chart-title">7-Day Energy Trend</h3>
-          <div class="chart-controls">
-            <button class="chart-btn active">Week</button>
-          </div>
-        </div>
-        <div class="chart-container" id="dailyChartContainer">
-          <canvas id="dailyChart"></canvas>
-        </div>
-      </div>
-
-      <div class="chart-card">
-        <div class="chart-header">
-          <h3 class="chart-title">Today's Load Profile</h3>
-          <div class="chart-controls">
-            <button class="chart-btn active">Power</button>
-          </div>
-        </div>
-        <div class="chart-container" id="loadChartContainer">
-          <canvas id="loadChart"></canvas>
-        </div>
-      </div>
-    </div>
-
-    <!-- TABLE -->
-    <div class="table-card">
-      <div class="table-header">
-        <h3 class="table-title">Recent Readings</h3>
-        <!-- <input type="text" class="search-box" placeholder="Search readings..." id="searchBox"> -->
-      </div>
-      <div class="table-wrapper">
-        <table>
-          <thead>
-            <tr>
-              <th>Time</th>
-              <th>Voltage (V)</th>
-              <th>Current (A)</th>
-              <th>Power (W)</th>
-              <th>Energy (kWh)</th>
-            </tr>
-          </thead>
-          <tbody id="readingsTable">
-            <tr>
-              <td colspan="5" class="loading">
-                <div class="spinner"></div>
-                Loading data...
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
-  </div>
-
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <script>
-    // ========================================
-    // PARSE DATA FROM SERVER
-    // ========================================
-    const dataElement = document.getElementById("dashboardData");
-    const dailyTrend = JSON.parse(dataElement.dataset.daily || "[]");
-    const latestReading = JSON.parse(dataElement.dataset.latest || "null");
-    const todayReadings = JSON.parse(dataElement.dataset.today || "[]");
-
-    console.log("📊 Dashboard Data:", { dailyTrend, latestReading, todayReadings });
-
-    // Check if we have any data
-    const hasData = dailyTrend.length > 0 || latestReading !== null || todayReadings.length > 0;
-
-    // ========================================
-    // UPDATE STATUS INDICATOR
-    // ========================================
-    const statusIndicator = document.getElementById('statusIndicator');
-    const statusText = document.getElementById('statusText');
-
-    if (!hasData) {
-      statusIndicator.classList.add('offline');
-      statusText.textContent = 'No Data Available';
-    }
-
-    // ========================================
-    // UPDATE LAST UPDATED TIME
-    // ========================================
-    function updateLastUpdatedTime() {
-      if (!hasData) {
-        document.getElementById('lastUpdate').textContent = 'Never';
-        return;
-      }
-      const now = new Date();
-      const timeStr = now.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-      document.getElementById('lastUpdate').textContent = timeStr;
-    }
-    updateLastUpdatedTime();
-    if (hasData) {
-      setInterval(updateLastUpdatedTime, 1000);
-    }
-
-    // ========================================
-    // CREATE EMPTY STATE
-    // ========================================
-    function createEmptyState(container, type = 'chart') {
-      const messages = {
-        chart: {
-          icon: 'bar-chart-3',
-          title: 'No Chart Data Available',
-          description: 'Start monitoring your energy usage to see visualizations here.'
-        },
-        table: {
-          icon: 'inbox',
-          title: 'No Readings Available',
-          description: 'Energy readings will appear here once your smart meter starts sending data.'
-        }
-      };
-
-      const msg = messages[type];
-
-      container.innerHTML = `
-        <div class="empty-state">
-          <div class="empty-state-icon">
-            <i data-lucide="${msg.icon}"></i>
-          </div>
-          <h3>${msg.title}</h3>
-          <p>${msg.description}</p>
-          <div class="empty-state-actions">
-            <button class="empty-state-btn" onclick="location.reload()">
-              <i data-lucide="refresh-cw"></i>
-              Refresh Page
-            </button>
-          </div>
-        </div>
-      `;
-
-      // Re-initialize icons for the new elements
-      lucide.createIcons();
-    }
-
-    // ========================================
-    // POPULATE KPI CARDS
-    // ========================================
-    if (todayReadings.length > 0) {
-      const latestToday = todayReadings[todayReadings.length - 1];
-      const firstToday = todayReadings[0];
-
-      // Current Power
-      const currentPowerKW = (latestToday.power / 1000).toFixed(2);
-      document.getElementById("currentPower").innerHTML = `${currentPowerKW} <span class="kpi-unit">kW</span>`;
-
-      // Today's Units
-      const todayUnits = latestToday.daily_units.toFixed(2);
-      document.getElementById("todayUnits").innerHTML = `${todayUnits} <span class="kpi-unit">kWh</span>`;
-
-      // Calculate change from yesterday (using daily trend)
-      if (dailyTrend.length >= 2) {
-        const yesterday = dailyTrend[dailyTrend.length - 2].total_units || 0;
-        const today = parseFloat(todayUnits);
-        const change = ((today - yesterday) / yesterday * 100).toFixed(1);
-        const changeEl = document.getElementById("todayChange");
-        if (change > 0) {
-          changeEl.textContent = `↑ ${change}% vs yesterday`;
-          changeEl.className = "kpi-change negative";
-        } else {
-          changeEl.textContent = `↓ ${Math.abs(change)}% vs yesterday`;
-          changeEl.className = "kpi-change positive";
-        }
-      } else {
-        document.getElementById("todayChange").textContent = "No comparison data";
-      }
-
-      // Peak Demand
-      const peakPower = Math.max(...todayReadings.map(r => r.power));
-      const peakReading = todayReadings.find(r => r.power === peakPower);
-      document.getElementById("peak").innerHTML = `${(peakPower / 1000).toFixed(2)} <span class="kpi-unit">kW</span>`;
-      if (peakReading) {
-        const peakTime = peakReading.timestamp.split(" ")[1].substring(0, 5);
-        document.getElementById("peakTime").textContent = `at ${peakTime}`;
-      }
-
-      // Monthly Total
-      const monthlyUnits = latestToday.monthly_units.toFixed(2);
-      document.getElementById("consumption").innerHTML = `${monthlyUnits} <span class="kpi-unit">kWh</span>`;
-
-      // Estimate monthly trend
-      const dayOfMonth = new Date().getDate();
-      const projectedMonthly = (latestToday.monthly_units / dayOfMonth * 30).toFixed(0);
-      document.getElementById("monthlyChange").textContent = `~${projectedMonthly} kWh projected`;
-      document.getElementById("monthlyChange").className = "kpi-change neutral";
-
-    } else if (latestReading) {
-      // Fallback to latest reading
-      document.getElementById("currentPower").innerHTML = `${(latestReading.power / 1000).toFixed(2)} <span class="kpi-unit">kW</span>`;
-      document.getElementById("todayUnits").innerHTML = `${latestReading.daily_units.toFixed(2)} <span class="kpi-unit">kWh</span>`;
-      document.getElementById("peak").innerHTML = `${(latestReading.power / 1000).toFixed(2)} <span class="kpi-unit">kW</span>`;
-      document.getElementById("consumption").innerHTML = `${(latestReading.total_energy_wh / 1000).toFixed(2)} <span class="kpi-unit">kWh</span>`;
-
-      document.getElementById("todayChange").textContent = "Limited data available";
-      document.getElementById("peakTime").textContent = "Current reading";
-      document.getElementById("monthlyChange").textContent = "Limited data available";
-    } else {
-      // No data available - show placeholder
-      document.getElementById("currentPower").innerHTML = `-- <span class="kpi-unit">kW</span>`;
-      document.getElementById("todayUnits").innerHTML = `-- <span class="kpi-unit">kWh</span>`;
-      document.getElementById("peak").innerHTML = `-- <span class="kpi-unit">kW</span>`;
-      document.getElementById("consumption").innerHTML = `-- <span class="kpi-unit">kWh</span>`;
-
-      document.getElementById("powerChange").textContent = "No data available";
-      document.getElementById("todayChange").textContent = "No data available";
-      document.getElementById("peakTime").textContent = "No data available";
-      document.getElementById("monthlyChange").textContent = "No data available";
-    }
-
-    // ========================================
-    // DAILY TREND CHART
-    // ========================================
-    if (dailyTrend.length > 0) {
-      dailyTrend.sort((a, b) => new Date(a.date) - new Date(b.date));
-      const last7 = dailyTrend.slice(-7);
-
-      const labels = last7.map(d => {
-        const date = new Date(d.date);
-        return date.toLocaleDateString("en-IN", { weekday: "short", month: "short", day: "numeric" });
-      });
-
-      const values = last7.map(d => d.total_units || d.daily_units || 0);
-      const avgValue = values.reduce((a, b) => a + b, 0) / values.length;
-
-      new Chart(document.getElementById("dailyChart"), {
-        type: "bar",
-        data: {
-          labels: labels,
-          datasets: [{
-            label: "Energy (kWh)",
-            data: values,
-            backgroundColor: values.map(v => v > avgValue ? 'rgba(239, 68, 68, 0.8)' : 'rgba(59, 130, 246, 0.8)'),
-            borderColor: values.map(v => v > avgValue ? 'rgba(239, 68, 68, 1)' : 'rgba(59, 130, 246, 1)'),
-            borderWidth: 2,
-            borderRadius: 8,
-          }]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: {
-            legend: { display: false },
-            tooltip: {
-              backgroundColor: 'rgba(255, 255, 255, 0.98)',
-              titleColor: '#0f172a',
-              bodyColor: '#0f172a',
-              borderColor: 'rgba(148, 163, 184, 0.3)',
-              borderWidth: 1,
-              padding: 12,
-              displayColors: false,
-              callbacks: {
-                label: function (context) {
-                  return `Energy: ${context.parsed.y.toFixed(2)} kWh`;
-                }
-              }
-            }
-          },
-          scales: {
-            x: {
-              grid: { display: false, color: 'rgba(148, 163, 184, 0.1)' },
-              ticks: { color: '#94a3b8', font: { size: 11 } }
-            },
-            y: {
-              beginAtZero: true,
-              grid: { color: 'rgba(148, 163, 184, 0.1)' },
-              ticks: {
-                color: '#94a3b8',
-                font: { size: 11 },
-                callback: value => value.toFixed(1) + ' kWh'
-              }
-            }
-          },
-          animation: {
-            duration: 1000,
-            easing: 'easeOutQuart'
-          }
-        }
-      });
-    } else {
-      // Show empty state for daily chart
-      const container = document.getElementById("dailyChartContainer");
-      createEmptyState(container, 'chart');
-    }
-
-    // ========================================
-    // TODAY'S LOAD PROFILE CHART
-    // ========================================
-    if (todayReadings.length > 0) {
-      const timeLabels = todayReadings.map(r => {
-        const time = r.timestamp.split(" ")[1];
-        return time.substring(0, 5);
-      });
-
-      const powerValues = todayReadings.map(r => r.power);
-
-      new Chart(document.getElementById("loadChart"), {
-        type: "line",
-        data: {
-          labels: timeLabels,
-          datasets: [{
-            label: "Power (W)",
-            data: powerValues,
-            borderColor: 'rgba(16, 185, 129, 1)',
-            backgroundColor: function (context) {
-              const ctx = context.chart.ctx;
-              const gradient = ctx.createLinearGradient(0, 0, 0, 300);
-              gradient.addColorStop(0, 'rgba(16, 185, 129, 0.3)');
-              gradient.addColorStop(1, 'rgba(16, 185, 129, 0)');
-              return gradient;
-            },
-            tension: 0.4,
-            fill: true,
-            pointRadius: 4,
-            pointHoverRadius: 8,
-            pointBackgroundColor: 'rgba(16, 185, 129, 1)',
-            pointBorderColor: '#ffffff',
-            pointBorderWidth: 2,
-            borderWidth: 3
-          }]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: {
-            legend: { display: false },
-            tooltip: {
-              backgroundColor: 'rgba(255, 255, 255, 0.98)',
-              titleColor: '#0f172a',
-              bodyColor: '#0f172a',
-              borderColor: 'rgba(148, 163, 184, 0.3)',
-              borderWidth: 1,
-              padding: 12,
-              displayColors: false,
-              callbacks: {
-                label: function (context) {
-                  return `Power: ${context.parsed.y.toFixed(0)} W (${(context.parsed.y / 1000).toFixed(2)} kW)`;
-                }
-              }
-            }
-          },
-          scales: {
-            x: {
-              grid: { color: 'rgba(148, 163, 184, 0.1)' },
-              ticks: {
-                color: '#94a3b8',
-                maxTicksLimit: 8,
-                font: { size: 11 }
-              }
-            },
-            y: {
-              beginAtZero: true,
-              grid: { color: 'rgba(148, 163, 184, 0.1)' },
-              ticks: {
-                color: '#94a3b8',
-                font: { size: 11 },
-                callback: value => (value / 1000).toFixed(1) + ' kW'
-              }
-            }
-          },
-          interaction: {
-            mode: 'nearest',
-            axis: 'x',
-            intersect: false
-          },
-          animation: {
-            duration: 1500,
-            easing: 'easeOutQuart'
-          }
-        }
-      });
-    } else {
-      // Show empty state for load chart
-      const container = document.getElementById("loadChartContainer");
-      createEmptyState(container, 'chart');
-    }
-
-    // ========================================
-    // POPULATE READINGS TABLE
-    // ========================================
-    if (todayReadings.length > 0) {
-      const tbody = document.getElementById("readingsTable");
-      tbody.innerHTML = "";
-
-      const recentReadings = todayReadings.slice(-10).reverse();
-
-      recentReadings.forEach((reading, index) => {
-        const row = document.createElement("tr");
-        row.style.animationDelay = `${index * 0.05}s`;
-
-        const time = reading.timestamp.split(" ")[1].substring(0, 5);
-
-        row.innerHTML = `
-          <td><span class="time-badge">${time}</span></td>
-          <td>${reading.voltage.toFixed(1)}</td>
-          <td>${reading.current.toFixed(2)}</td>
-          <td>${reading.power.toFixed(0)}</td>
-          <td>${reading.daily_units.toFixed(2)}</td>
-        `;
-
-        tbody.appendChild(row);
-      });
-
-      // Search functionality
-      const searchBox = document.getElementById('searchBox');
-      searchBox.addEventListener('input', (e) => {
-        const searchTerm = e.target.value.toLowerCase();
-        const rows = tbody.querySelectorAll('tr');
-
-        rows.forEach(row => {
-          const text = row.textContent.toLowerCase();
-          row.style.display = text.includes(searchTerm) ? '' : 'none';
-        });
-      });
-    } else {
-      // Show empty state for table
-      document.getElementById("readingsTable").innerHTML = `
-        <tr>
-          <td colspan="5" style="padding: 0;">
-            <div class="empty-state">
-              <div class="empty-state-icon">
-                <i data-lucide="inbox"></i>
-              </div>
-              <h3>No Readings Available</h3>
-              <p>Energy readings will appear here once your smart meter starts sending data.</p>
-            </div>
-          </td>
-        </tr>
-      `;
-
-      // Disable search box
-      document.getElementById('searchBox').disabled = true;
-      document.getElementById('searchBox').placeholder = "No data to search";
-    }
-
-    // ========================================
-    // INITIALIZE LUCIDE ICONS
-    // ========================================
-    lucide.createIcons();
-  </script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="/js/user-dashboard.js"></script>

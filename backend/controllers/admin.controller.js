@@ -122,6 +122,7 @@ export const registration = async (req, res, next) => {
     return res.status(200).json({
       success: true,
       message: "Registration successful",
+      redirectUrl: "/admin/users",
     });
   } catch (error) {
     console.error(error);
@@ -157,6 +158,9 @@ export const dashboardController = async (req, res, next) => {
         ...alert.val(),
       });
     });
+    users.sort((a, b) =>
+      b.registration_date.localeCompare(a.registration_date),
+    );
     const totalAlerts = alerts.length;
     // res.json(alertsSnap);
     res.render("admin/dashboard", {
@@ -180,8 +184,6 @@ export const allUsers = async (req, res, next) => {
     snapshot.forEach((child) => {
       users.push({ id: child.key, ...child.val() });
     });
-
-    console.log(users.map((u) => u.registration_date));
 
     users.sort((a, b) =>
       b.registration_date.localeCompare(a.registration_date),
@@ -268,7 +270,6 @@ export const dailyUseage = async (req, res, next) => {
     const _10dayTrend = allDailyData.slice(-10);
     const _2WeekTrend = allDailyData.slice(-14);
     const monthTrend = allDailyData.slice(-30);
-
     /* ===============================
        GET TODAY'S READINGS ONLY
     =============================== */

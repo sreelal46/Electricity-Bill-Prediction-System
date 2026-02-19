@@ -1,0 +1,401 @@
+/* Page-specific styles */
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 3rem;
+  animation: slideDown 0.6s ease-out;
+}
+
+.header-content h1 {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 2.5rem;
+  font-weight: 700;
+  background: linear-gradient(
+    135deg,
+    var(--text-primary) 0%,
+    var(--accent-blue) 100%
+  );
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin-bottom: 0.5rem;
+}
+
+.header-content h1 svg {
+  width: 36px;
+  height: 36px;
+  color: var(--accent-purple);
+}
+
+.header-subtitle {
+  color: var(--text-secondary);
+  font-size: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.status-indicator {
+  width: 8px;
+  height: 8px;
+  background: var(--accent-green);
+  border-radius: 50%;
+  animation: pulse 2s ease-in-out infinite;
+  box-shadow: 0 0 10px var(--accent-green);
+}
+
+.status-indicator.offline {
+  background: var(--text-secondary);
+  box-shadow: 0 0 10px var(--text-secondary);
+  animation: none;
+}
+
+/* KPI Cards */
+.kpi-card {
+  position: relative;
+  overflow: hidden;
+}
+
+.kpi-card::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 3px;
+  background: linear-gradient(90deg, var(--accent-blue), var(--accent-purple));
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.kpi-card:hover::before {
+  opacity: 1;
+}
+
+.kpi-label {
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 0.75rem;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.kpi-value {
+  font-size: 2.25rem;
+  font-weight: 700;
+  font-family: "JetBrains Mono", monospace;
+  margin-bottom: 0.5rem;
+  color: var(--text-primary);
+  line-height: 1;
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+}
+
+.kpi-unit {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.kpi-details {
+  font-size: 0.875rem;
+  color: var(--accent-indigo);
+  line-height: 1.5;
+}
+
+.chart-container {
+  position: relative;
+  height: 100px;
+  margin-top: 1rem;
+}
+
+/* Weekly Summary Cards */
+.week-card {
+  background: var(--bg-secondary);
+  padding: 1.25rem;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+  transition: all 0.2s ease;
+}
+
+.week-card:hover {
+  background: var(--bg-card);
+  border-color: var(--accent-blue);
+  transform: translateY(-2px);
+}
+
+.week-label {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 0.5rem;
+}
+
+.week-value {
+  font-size: 1.25rem;
+  font-weight: 700;
+  font-family: "JetBrains Mono", monospace;
+  color: var(--text-primary);
+  margin-bottom: 0.25rem;
+}
+
+.week-avg {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  margin-bottom: 0.5rem;
+}
+
+.week-date {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  font-style: italic;
+}
+
+/* Insights Section */
+.insight-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 0.75rem 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.insight-item:last-child {
+  border-bottom: none;
+}
+
+.insight-icon {
+  flex-shrink: 0;
+  margin-top: 0.25rem;
+}
+
+.insight-icon svg {
+  width: 16px;
+  height: 16px;
+  color: var(--accent-green);
+}
+
+.insight-text {
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+
+.insight-text strong {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+/* Empty State */
+.empty-state {
+  text-align: center;
+  padding: 4rem 2rem;
+  color: var(--text-secondary);
+}
+
+.empty-state-icon {
+  width: 120px;
+  height: 120px;
+  margin: 0 auto 2rem;
+  background: var(--bg-secondary);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-secondary);
+}
+
+.empty-state-icon svg {
+  width: 60px;
+  height: 60px;
+}
+
+.empty-state h2 {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 1rem;
+}
+
+.empty-state p {
+  font-size: 1.05rem;
+  color: var(--text-secondary);
+  margin-bottom: 2rem;
+  max-width: 600px;
+  margin-left: auto;
+  margin-right: auto;
+  line-height: 1.6;
+}
+
+.empty-state-steps {
+  max-width: 500px;
+  margin: 0 auto 2rem;
+  text-align: left;
+}
+
+.empty-state-step {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  padding: 1rem;
+  background: var(--bg-secondary);
+  border-radius: 12px;
+  margin-bottom: 1rem;
+  border: 1px solid var(--border);
+}
+
+.empty-state-step-number {
+  width: 32px;
+  height: 32px;
+  background: var(--accent-blue);
+  color: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.empty-state-step-content h4 {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 0.25rem;
+}
+
+.empty-state-step-content p {
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+  margin: 0;
+  line-height: 1.5;
+}
+
+.empty-state-actions {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.empty-state-btn {
+  background: var(--accent-blue);
+  color: white;
+  padding: 0.875rem 1.75rem;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  font-size: 1rem;
+  font-family: "DM Sans", sans-serif;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 500;
+}
+
+.empty-state-btn:hover {
+  background: var(--accent-blue);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+}
+
+.empty-state-btn.secondary {
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  border: 1px solid var(--border);
+}
+
+.empty-state-btn.secondary:hover {
+  background: var(--bg-card);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Small Empty State for Charts */
+.chart-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  padding: 1rem;
+  text-align: center;
+}
+
+.chart-empty-state svg {
+  width: 32px;
+  height: 32px;
+  color: var(--text-secondary);
+  margin-bottom: 0.5rem;
+  opacity: 0.5;
+}
+
+.chart-empty-state p {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+/* Animation delays */
+.card:nth-child(1) {
+  animation-delay: 0.1s;
+}
+
+.card:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.card:nth-child(3) {
+  animation-delay: 0.3s;
+}
+
+.card:nth-child(4) {
+  animation-delay: 0.4s;
+}
+
+.card:nth-child(5) {
+  animation-delay: 0.5s;
+}
+
+.card:nth-child(6) {
+  animation-delay: 0.6s;
+}
+
+.text-capitalize {
+  text-transform: capitalize;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .empty-state h2 {
+    font-size: 1.5rem;
+  }
+
+  .empty-state p {
+    font-size: 0.95rem;
+  }
+
+  .empty-state-icon {
+    width: 100px;
+    height: 100px;
+  }
+
+  .empty-state-icon svg {
+    width: 50px;
+    height: 50px;
+  }
+
+  .empty-state-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}
