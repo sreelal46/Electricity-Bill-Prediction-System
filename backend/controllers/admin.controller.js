@@ -6,18 +6,8 @@ export const loginPage = async (req, res) => {
 // Logout Controller
 export const logoutController = (req, res) => {
   // Destroy the session
-  req.session.destroy((err) => {
-    if (err) {
-      console.error("❌ Logout Error:", err);
-      return res.status(500).send("Error logging out");
-    }
-
-    // Clear the session cookie
-    res.clearCookie("connect.sid"); // Default session cookie name
-
-    // Redirect to home page
-    res.redirect("/");
-  });
+  delete req.session.admin;
+  res.redirect("/");
 };
 export const verifyAdmin = async (req, res) => {
   try {
@@ -190,6 +180,12 @@ export const allUsers = async (req, res, next) => {
     snapshot.forEach((child) => {
       users.push({ id: child.key, ...child.val() });
     });
+
+    console.log(users.map((u) => u.registration_date));
+
+    users.sort((a, b) =>
+      b.registration_date.localeCompare(a.registration_date),
+    );
 
     // res.json(users);
     res.render("admin/admin-users", {

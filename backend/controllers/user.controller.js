@@ -12,8 +12,8 @@ export const checkSession = (req, res, next) => {
 export const loginPage = (req, res) => {
   res.status(200).render("user/login", { layout: false });
 };
-// Clean verifyUser controller - Production ready (no debug logs)
 
+// Clean verifyUser controller
 export const verifyUser = async (req, res) => {
   try {
     const { consumerNumber, phone } = req.body;
@@ -88,6 +88,12 @@ export const verifyUser = async (req, res) => {
       return res.status(401).json({
         success: false,
         message: "Invalid phone number",
+      });
+    }
+    if (!foundUser.isInstalled) {
+      return res.status(401).json({
+        success: false,
+        message: "Your service is not installed yet. Please contact support.",
       });
     }
 
@@ -509,15 +515,7 @@ export const predictPage = async (req, res, next) => {
 // Logout Controller
 export const logoutController = (req, res) => {
   // Destroy the session
-  req.session.destroy((err) => {
-    if (err) {
-      return res.status(500).send("Error logging out");
-    }
-
-    // Clear the session cookie
-    res.clearCookie("connect.sid"); // Default session cookie name
-
-    // Redirect to home page
-    res.redirect("/");
-  });
+  delete req.session.user;
+  // Redirect to home page
+  res.redirect("/");
 };
