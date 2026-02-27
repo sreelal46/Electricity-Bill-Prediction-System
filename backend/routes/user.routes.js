@@ -12,6 +12,7 @@ import {
   registerPage,
   registration,
   predictPage,
+  billsPage,
   profilePage,
   dashboardController,
   logoutController,
@@ -27,6 +28,7 @@ router.post("/registration", registration);
 router.get("/dashboard", checkSession, dashboardController);
 
 router.get("/predictions", checkSession, predictPage);
+router.get("/bills", checkSession, billsPage);
 router.get("/alerts", checkSession, alertController);
 router.get("/profile", checkSession, profilePage);
 router.get("/logout", checkSession, logoutController);

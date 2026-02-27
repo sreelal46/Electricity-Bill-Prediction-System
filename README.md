@@ -642,10 +642,8 @@ curl http://localhost:5000/
 - [ ] Multiple ML models (LSTM, Prophet)
 - [ ] Seasonal pattern detection
 - [ ] User behavior analysis
-- [ ] Mobile app integration
 - [ ] Cost optimization suggestions
 - [ ] Comparative analysis (vs neighbors)
-- [ ] Carbon footprint calculation
 
 ## 🙏 Acknowledgments
 

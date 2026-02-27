@@ -1,0 +1,294 @@
+<link rel="stylesheet" href="/css/user-bills.css">
+
+<!-- ===== MODAL ===== -->
+<div id="bcModal" class="bc-modal-overlay" onclick="bcBackdrop(event)">
+  <div class="bc-modal">
+
+    <button class="bc-modal-close" onclick="bcCloseModal()">
+      <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+        <line x1="18" y1="6" x2="6" y2="18" />
+        <line x1="6" y1="6" x2="18" y2="18" />
+      </svg>
+    </button>
+
+    <div class="bc-modal-icon">
+      <svg width="26" height="26" fill="none" stroke="#6366f1" stroke-width="2" viewBox="0 0 24 24">
+        <rect x="1" y="4" width="22" height="16" rx="2" />
+        <line x1="1" y1="10" x2="23" y2="10" />
+      </svg>
+    </div>
+
+    <h2 class="bc-modal-title">Confirm Payment</h2>
+    <p class="bc-modal-sub">Please review the details before confirming your payment.</p>
+
+    <div class="bc-modal-summary">
+      <div class="bc-modal-row"><span class="mk">Period</span><span class="mv" id="bcPeriod">—</span></div>
+      <div class="bc-modal-row"><span class="mk">Bill No.</span><span class="mv mono" id="bcBillNo">—</span></div>
+      <div class="bc-modal-row"><span class="mk">Consumer No.</span><span class="mv mono" id="bcConsumer">—</span></div>
+      <div class="bc-modal-row bc-modal-total">
+        <span class="mk">Amount Payable</span>
+        <span class="bc-modal-amount" id="bcAmount">—</span>
+      </div>
+    </div>
+
+    <div class="bc-modal-error" id="bcError">Something went wrong. Please try again.</div>
+
+    <div class="bc-modal-actions">
+      <button class="bc-cancel-btn" onclick="bcCloseModal()">Cancel</button>
+      <button class="bc-confirm-btn" id="bcConfirmBtn" onclick="bcConfirmPayment()">
+        <span id="bcConfirmTxt">Confirm Payment</span>
+        <svg class="bc-spinner" id="bcSpinner" width="15" height="15" viewBox="0 0 24 24" fill="none"
+          stroke="currentColor" stroke-width="2.5">
+          <path d="M21 12a9 9 0 1 1-6.219-8.56" />
+        </svg>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== TOAST ===== -->
+<div class="bc-toast" id="bcToast">
+  <svg width="17" height="17" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+    <polyline points="20 6 9 17 4 12" />
+  </svg>
+  Payment confirmed successfully!
+</div>
+
+<!-- ===== PAGE ===== -->
+<div class="container">
+
+  <!-- Header -->
+  <div class="bills-page-header">
+    <h1 class="bills-page-title">
+      <svg width="30" height="30" fill="none" stroke="#8b5cf6" stroke-width="2" viewBox="0 0 24 24">
+        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+        <polyline points="14 2 14 8 20 8" />
+        <line x1="16" y1="13" x2="8" y2="13" />
+        <line x1="16" y1="17" x2="8" y2="17" />
+      </svg>
+      Electricity Bills
+    </h1>
+    <div class="bills-page-subtitle">
+      <span class="bills-pulse-dot"></span>
+      Account: KE-2847-5591 &nbsp;·&nbsp; Rahul Menon
+    </div>
+  </div>
+
+  <!-- Grid -->
+  <div class="bills-grid">
+
+    <!-- JAN – FEB 2025 · Unpaid -->
+    <div class="bill-card bc-unpaid">
+      <div class="bc-top">
+        <span class="bc-period p-unpaid">Jan – Feb 2025</span>
+        <span class="bc-status s-unpaid"><span class="bc-dot d-red"></span>Unpaid</span>
+      </div>
+      <div class="bc-amount-label">Total Amount</div>
+      <div class="bc-amount a-unpaid">₹1,842</div>
+      <div class="bc-details">
+        <div class="bc-row"><span class="bc-key">Bill Date</span><span class="bc-val">01 Mar 2025</span></div>
+        <div class="bc-row"><span class="bc-key">Due Date</span><span class="bc-val bc-due">15 Mar 2025</span></div>
+        <div class="bc-row"><span class="bc-key">Bill No.</span><span class="bc-val bc-mono">BL-2025-0214</span></div>
+        <div class="bc-row"><span class="bc-key">Consumer No.</span><span class="bc-val bc-mono">KE-2847-5591</span>
+        </div>
+        <div class="bc-row"><span class="bc-key">Units Used</span><span class="bc-val bc-mono bc-bold">312 kWh</span>
+        </div>
+      </div>
+      <button class="bc-pay-btn" onclick="bcOpenModal(this)" data-id="bill-001" data-period="Jan – Feb 2025"
+        data-billno="BL-2025-0214" data-consumerno="KE-2847-5591" data-amount="₹1,842">Pay Now</button>
+    </div>
+
+    <!-- MAR – APR 2025 · Paid -->
+    <div class="bill-card bc-paid">
+      <div class="bc-top">
+        <span class="bc-period p-paid">Mar – Apr 2025</span>
+        <span class="bc-status s-paid"><span class="bc-dot d-green"></span>Paid</span>
+      </div>
+      <div class="bc-amount-label">Total Amount</div>
+      <div class="bc-amount a-paid">₹1,706</div>
+      <div class="bc-details">
+        <div class="bc-row"><span class="bc-key">Bill Date</span><span class="bc-val">01 May 2025</span></div>
+        <div class="bc-row"><span class="bc-key">Due Date</span><span class="bc-val">15 May 2025</span></div>
+        <div class="bc-row"><span class="bc-key">Bill No.</span><span class="bc-val bc-mono">BL-2025-0412</span></div>
+        <div class="bc-row"><span class="bc-key">Consumer No.</span><span class="bc-val bc-mono">KE-2847-5591</span>
+        </div>
+        <div class="bc-row"><span class="bc-key">Units Used</span><span class="bc-val bc-mono bc-bold">294 kWh</span>
+        </div>
+      </div>
+      <button class="bc-receipt-btn">View Receipt</button>
+    </div>
+
+    <!-- MAY – JUN 2025 · Paid -->
+    <div class="bill-card bc-paid">
+      <div class="bc-top">
+        <span class="bc-period p-paid">May – Jun 2025</span>
+        <span class="bc-status s-paid"><span class="bc-dot d-green"></span>Paid</span>
+      </div>
+      <div class="bc-amount-label">Total Amount</div>
+      <div class="bc-amount a-paid">₹1,598</div>
+      <div class="bc-details">
+        <div class="bc-row"><span class="bc-key">Bill Date</span><span class="bc-val">01 Jul 2025</span></div>
+        <div class="bc-row"><span class="bc-key">Due Date</span><span class="bc-val">15 Jul 2025</span></div>
+        <div class="bc-row"><span class="bc-key">Bill No.</span><span class="bc-val bc-mono">BL-2025-0608</span></div>
+        <div class="bc-row"><span class="bc-key">Consumer No.</span><span class="bc-val bc-mono">KE-2847-5591</span>
+        </div>
+        <div class="bc-row"><span class="bc-key">Units Used</span><span class="bc-val bc-mono bc-bold">278 kWh</span>
+        </div>
+      </div>
+      <button class="bc-receipt-btn">View Receipt</button>
+    </div>
+
+    <!-- JUL – AUG 2025 · Paid -->
+    <div class="bill-card bc-paid">
+      <div class="bc-top">
+        <span class="bc-period p-paid">Jul – Aug 2025</span>
+        <span class="bc-status s-paid"><span class="bc-dot d-green"></span>Paid</span>
+      </div>
+      <div class="bc-amount-label">Total Amount</div>
+      <div class="bc-amount a-paid">₹2,015</div>
+      <div class="bc-details">
+        <div class="bc-row"><span class="bc-key">Bill Date</span><span class="bc-val">01 Sep 2025</span></div>
+        <div class="bc-row"><span class="bc-key">Due Date</span><span class="bc-val">15 Sep 2025</span></div>
+        <div class="bc-row"><span class="bc-key">Bill No.</span><span class="bc-val bc-mono">BL-2025-0809</span></div>
+        <div class="bc-row"><span class="bc-key">Consumer No.</span><span class="bc-val bc-mono">KE-2847-5591</span>
+        </div>
+        <div class="bc-row"><span class="bc-key">Units Used</span><span class="bc-val bc-mono bc-bold">340 kWh</span>
+        </div>
+      </div>
+      <button class="bc-receipt-btn">View Receipt</button>
+    </div>
+
+    <!-- SEP – OCT 2025 · Paid -->
+    <div class="bill-card bc-paid">
+      <div class="bc-top">
+        <span class="bc-period p-paid">Sep – Oct 2025</span>
+        <span class="bc-status s-paid"><span class="bc-dot d-green"></span>Paid</span>
+      </div>
+      <div class="bc-amount-label">Total Amount</div>
+      <div class="bc-amount a-paid">₹1,780</div>
+      <div class="bc-details">
+        <div class="bc-row"><span class="bc-key">Bill Date</span><span class="bc-val">01 Nov 2025</span></div>
+        <div class="bc-row"><span class="bc-key">Due Date</span><span class="bc-val">15 Nov 2025</span></div>
+        <div class="bc-row"><span class="bc-key">Bill No.</span><span class="bc-val bc-mono">BL-2025-1007</span></div>
+        <div class="bc-row"><span class="bc-key">Consumer No.</span><span class="bc-val bc-mono">KE-2847-5591</span>
+        </div>
+        <div class="bc-row"><span class="bc-key">Units Used</span><span class="bc-val bc-mono bc-bold">305 kWh</span>
+        </div>
+      </div>
+      <button class="bc-receipt-btn">View Receipt</button>
+    </div>
+
+    <!-- NOV – DEC 2025 · Paid -->
+    <div class="bill-card bc-paid">
+      <div class="bc-top">
+        <span class="bc-period p-paid">Nov – Dec 2025</span>
+        <span class="bc-status s-paid"><span class="bc-dot d-green"></span>Paid</span>
+      </div>
+      <div class="bc-amount-label">Total Amount</div>
+      <div class="bc-amount a-paid">₹1,920</div>
+      <div class="bc-details">
+        <div class="bc-row"><span class="bc-key">Bill Date</span><span class="bc-val">01 Jan 2026</span></div>
+        <div class="bc-row"><span class="bc-key">Due Date</span><span class="bc-val">15 Jan 2026</span></div>
+        <div class="bc-row"><span class="bc-key">Bill No.</span><span class="bc-val bc-mono">BL-2025-1205</span></div>
+        <div class="bc-row"><span class="bc-key">Consumer No.</span><span class="bc-val bc-mono">KE-2847-5591</span>
+        </div>
+        <div class="bc-row"><span class="bc-key">Units Used</span><span class="bc-val bc-mono bc-bold">321 kWh</span>
+        </div>
+      </div>
+      <button class="bc-receipt-btn">View Receipt</button>
+    </div>
+
+  </div><!-- /bills-grid -->
+</div><!-- /container -->
+
+<script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+<script>
+  let bcCurrentId = null;
+
+  function bcOpenModal(btn) {
+    bcCurrentId = btn.dataset.id;
+    document.getElementById('bcPeriod').textContent = btn.dataset.period;
+    document.getElementById('bcBillNo').textContent = btn.dataset.billno;
+    document.getElementById('bcConsumer').textContent = btn.dataset.consumerno;
+    document.getElementById('bcAmount').textContent = btn.dataset.amount;
+    document.getElementById('bcError').classList.remove('show');
+    bcResetBtn();
+    document.getElementById('bcModal').classList.add('open');
+  }
+
+  function bcCloseModal() {
+    document.getElementById('bcModal').classList.remove('open');
+    bcCurrentId = null;
+  }
+
+  function bcBackdrop(e) {
+    if (e.target === document.getElementById('bcModal')) bcCloseModal();
+  }
+
+  async function bcConfirmPayment() {
+    if (!bcCurrentId) return;
+
+    document.getElementById('bcConfirmTxt').textContent = 'Processing...';
+    document.getElementById('bcSpinner').classList.add('show');
+    document.getElementById('bcConfirmBtn').disabled = true;
+    document.getElementById('bcError').classList.remove('show');
+
+    try {
+      await axios.put(`/api/bills/${bcCurrentId}/pay`, {
+        status: 'paid',
+        paid_at: new Date().toISOString()
+      });
+
+      bcCloseModal();
+      bcShowToast();
+
+      // Update card UI
+      const payBtn = document.querySelector(`[data-id="${bcCurrentId}"]`);
+      if (payBtn) {
+        const card = payBtn.closest('.bill-card');
+
+        // Period badge → paid
+        card.querySelector('.bc-period').className = 'bc-period p-paid';
+
+        // Status badge → paid
+        const sb = card.querySelector('.bc-status');
+        sb.className = 'bc-status s-paid';
+        sb.innerHTML = '<span class="bc-dot d-green"></span>Paid';
+
+        // Amount → paid color
+        card.querySelector('.bc-amount').className = 'bc-amount a-paid';
+
+        // Due date → remove red
+        const due = card.querySelector('.bc-due');
+        if (due) due.className = 'bc-val';
+
+        // Card border → paid
+        card.classList.replace('bc-unpaid', 'bc-paid');
+
+        // Swap button
+        payBtn.className = 'bc-receipt-btn';
+        payBtn.textContent = 'Paid ✓';
+        payBtn.disabled = true;
+        payBtn.removeAttribute('onclick');
+      }
+
+    } catch (err) {
+      const el = document.getElementById('bcError');
+      el.textContent = err.response?.data?.message || 'Payment failed. Please try again.';
+      el.classList.add('show');
+      bcResetBtn();
+    }
+  }
+
+  function bcResetBtn() {
+    document.getElementById('bcConfirmTxt').textContent = 'Confirm Payment';
+    document.getElementById('bcSpinner').classList.remove('show');
+    document.getElementById('bcConfirmBtn').disabled = false;
+  }
+
+  function bcShowToast() {
+    const t = document.getElementById('bcToast');
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 3500);
+  }
+</script>

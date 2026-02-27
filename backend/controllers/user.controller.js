@@ -207,6 +207,9 @@ export const registration = async (req, res, next) => {
 export const registerPage = (req, res) => {
   res.status(200).render("user/registration", { layout: false });
 };
+export const billsPage = (req, res) => {
+  res.status(200).render("user/electricityBills");
+};
 
 export const dashboardController = async (req, res) => {
   const userId = req.session.user.id;
