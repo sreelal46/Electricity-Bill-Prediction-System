@@ -266,6 +266,17 @@ export const dashboardController = async (req, res) => {
     // Sort by timestamp
     todayReadings.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
 
+    const limitSnap = await db
+      .ref("usagelimit")
+      .orderByChild("userId")
+      .equalTo(userId)
+      .once("value");
+    let amount = null;
+    if (limitSnap.exists()) {
+      const data = Object.values(limitSnap.val())[0];
+      amount = data.amount;
+    }
+
     /* ===============================
        RENDER DASHBOARD VIEW
     =============================== */
@@ -279,9 +290,37 @@ export const dashboardController = async (req, res) => {
       dailyTrend,
       latestReading,
       todayReadings,
+      amount,
     });
   } catch (err) {
     res.status(500).send(err.message);
+  }
+};
+export const usageLimit = async (req, res) => {
+  try {
+    const { amount } = req.body;
+    const userId = req.session.user.id;
+    const userEmail = req.session.user.email;
+
+    const ref = db.ref(`usagelimit/${userId}`);
+
+    await ref.set({
+      amount,
+      userId: userId,
+      userEmail: userEmail,
+      createdAt: new Date().toISOString(),
+    });
+
+    res.status(200).json({
+      success: true,
+    });
+  } catch (error) {
+    console.log("error from usageLimit", error);
+
+    res.status(500).json({
+      success: false,
+      message: "Failed to save data",
+    });
   }
 };
 

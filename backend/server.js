@@ -13,6 +13,8 @@ import FileStore from "session-file-store";
 import { engine } from "express-handlebars";
 import userRoutes from "./routes/user.routes.js";
 import adminRoutes from "./routes/admin.routes.js";
+import db from "./config/firebase.js"; // ← note: config/firebase.js
+import { sendEmail } from "./utils/mailer.js";
 
 const app = express();
 const PORT = process.env.PORT || 8000;
@@ -174,6 +176,40 @@ app.use((err, req, res, next) => {
   });
 });
 
+// ─── Bill Limit Listener ─────────────────────────────
+console.log("✅ Bill limit listener is active...");
+
+db.ref("running_bills").on("child_changed", async (snapshot) => {
+  const userId = snapshot.key;
+  const bills = snapshot.val();
+
+  if (!bills) {
+    console.log("❌ No bills data found");
+    return;
+  }
+
+  const lastEntry = Object.values(bills).pop();
+  const runningBill = lastEntry.running_monthly_bill;
+  console.log(`📊 User: ${userId} | Running Bill: ₹${runningBill}`);
+
+  const limitSnap = await db.ref(`usageLimit/${userId}`).once("value");
+  const limit = limitSnap.val()?.amount;
+  const userEmail = limitSnap.val()?.userEmail;
+
+  console.log(`🔎 Limit: ₹${limit} | Email: ${userEmail}`);
+
+  if (!limit) {
+    console.log(`⚠️ No limit set for user: ${userId}`);
+    return;
+  }
+
+  if (runningBill > limit) {
+    console.log(`🚨 Limit exceeded! Sending email to ${userEmail}...`);
+    await sendEmail(userId, userEmail, runningBill, limit);
+  } else {
+    console.log(`✅ Bill ₹${runningBill} is within limit ₹${limit}`);
+  }
+});
 // ============ Start Server ============
 app.listen(PORT, () => {
   console.log("\n" + "=".repeat(60));

@@ -3,7 +3,7 @@
 
 <!-- DATA HOLDER - NOW POPULATED BY SERVER VIA HANDLEBARS -->
 <div id="dashboardData" data-daily='{{{dailyTrendJSON}}}' data-latest='{{{latestReadingJSON}}}'
-  data-today='{{{todayReadingsJSON}}}'>
+  data-today='{{{todayReadingsJSON}}}' data-amount='{{amount}}'> <!-- ADD THIS -->
 </div>
 
 <div class="container">
@@ -70,6 +70,72 @@
       <div class="kpi-change" id="monthlyChange">--</div>
     </div>
   </div>
+  <!-- THRESHOLD ALERT BANNER -->
+  <div class="threshold-alert" id="thresholdAlert">
+    <div class="alert-icon-wrap">
+      <i data-lucide="alert-triangle"></i>
+    </div>
+    <div class="alert-text">
+      <strong id="alertTitle">⚡ Usage Limit Exceeded!</strong>
+      <span id="alertBody">Your energy consumption has crossed the set threshold.</span>
+    </div>
+    <button class="alert-dismiss" id="alertDismiss" title="Dismiss alert">
+      <i data-lucide="x"></i>
+    </button>
+  </div>
+
+  <!-- THRESHOLD BAR -->
+  <div class="threshold-bar">
+    <div class="threshold-info">
+      <i data-lucide="gauge"></i>
+      <span>Usage Limit: <span class="font-bold">{{amount}} INR</span></span>
+      {{#unless amount}}
+      <span class="threshold-value-display not-set" id="thresholdDisplay">Not set</span>
+      {{/unless}}
+    </div>
+    <button class="set-limit-btn" id="openThresholdModal">
+      <i data-lucide="settings-2"></i>
+      Set Limit
+    </button>
+  </div>
+
+  <!-- THRESHOLD MODAL -->
+  <div class="modal-overlay" id="thresholdModalOverlay">
+    <div class="modal">
+      <div class="modal-header">
+        <div class="modal-header-icon">
+          <i data-lucide="gauge"></i>
+        </div>
+        <div class="modal-header-text">
+          <h3>Set Usage Limit</h3>
+          <p>Get alerted when consumption crosses this value</p>
+        </div>
+      </div>
+
+      <div class="modal-field">
+        <label>Monthly Amount</label>
+        <div class="modal-input-wrap">
+          <input type="number" class="modal-input" id="thresholdInput" placeholder="e.g. 150" min="0" step="0.1" />
+          <span class="modal-input-unit">INR</span>
+        </div>
+        <p class="modal-hint">Alert triggers when monthly units exceed this value.</p>
+      </div>
+
+      <div class="modal-actions">
+        <button class="modal-btn cancel" id="cancelThreshold">
+          Cancel
+        </button>
+        <button class="modal-btn save" id="saveThreshold">
+          <span class="modal-default-state" style="display:flex;align-items:center;gap:0.4rem;">
+            <i data-lucide="check"></i> Save Limit
+          </span>
+          <span class="modal-saving-state">
+            <span class="modal-spinner"></span> Saving...
+          </span>
+        </button>
+      </div>
+    </div>
+  </div>
 
   <!-- CHARTS -->
   <div class="charts-grid">
@@ -128,5 +194,6 @@
   </div>
 </div>
 <script src="https://unpkg.com/lucide@latest"></script>
+<script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="/js/user-dashboard.js"></script>
