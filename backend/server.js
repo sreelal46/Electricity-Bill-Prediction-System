@@ -137,7 +137,7 @@ app.use(express.static(path.join(__dirname, "public")));
 // ============ Routes ============
 
 // User dashboard routes (HBS views)
-app.get("/", (req, res) => {
+app.get("/", async (req, res) => {
   res.render("landingpage", { layout: false });
 });
 app.get("/home", (req, res) => {

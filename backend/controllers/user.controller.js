@@ -8,7 +8,12 @@ export const checkSession = (req, res, next) => {
 
   next(); // user is logged in
 };
-
+export const isLogin = (req, res, next) => {
+  if (req.session.user) {
+    return res.redirect("/user/dashboard"); // change to your login route
+  }
+  next(); // user is logged in
+};
 export const loginPage = (req, res) => {
   res.status(200).render("user/login", { layout: false });
 };
