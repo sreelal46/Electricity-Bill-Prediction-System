@@ -306,6 +306,19 @@
     background 0.2s,
     transform 0.2s;
 }
+.bc-receipt-btn-download {
+  flex: 1;
+  padding: 0.65rem 0;
+  border-radius: 10px;
+  background: rgba(16, 185, 129, 0.08);
+  color: #059669;
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  font-size: 0.875rem;
+  font-weight: 600;
+  font-family: "DM Sans", sans-serif;
+  cursor: pointer;
+  transition: background 0.2s;
+}
 
 .bc-receipt-btn:hover:not(:disabled) {
   background: rgba(16, 185, 129, 0.15);

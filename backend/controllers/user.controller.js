@@ -1,5 +1,7 @@
 import db from "../config/firebase.js";
 import axios from "axios";
+import PDFDocument from "pdfkit";
+import { generateBillPDF } from "./billPdfGenerator.js";
 
 export const checkSession = (req, res, next) => {
   if (!req.session || !req.session.user) {
@@ -212,8 +214,54 @@ export const registration = async (req, res, next) => {
 export const registerPage = (req, res) => {
   res.status(200).render("user/registration", { layout: false });
 };
-export const billsPage = (req, res) => {
-  res.status(200).render("user/electricityBills");
+export const billsPage = async (req, res) => {
+  const userId = req.session.user.id;
+  try {
+    const snapshot = await db.ref(`monthly_bills/${userId}`).get();
+    const raw = snapshot.val(); // { '-NyBill001': {...}, '-NyBill002': {...} }
+
+    // Convert to array and attach the key as bill_id
+    const bills = Object.entries(raw).map(([key, value]) => ({
+      ...value,
+      bill_id: key, // ← attach the Firebase key onto each bill
+    }));
+    res.status(200).render("user/electricityBills", { bills });
+  } catch (error) {}
+};
+
+export const billPDF = async (req, res) => {
+  try {
+    const userId = req.session.user.id;
+    const { billId } = req.params;
+
+    // ── Fetch bill from Firebase ──────────────────────────────────────────
+    const snapshot = await db.ref(`monthly_bills/${userId}/${billId}`).get();
+    if (!snapshot.exists()) {
+      return res.status(404).json({ message: "Bill not found" });
+    }
+    const bill = snapshot.val();
+
+    // ── Set response headers ──────────────────────────────────────────────
+    res.setHeader("Content-Type", "application/pdf");
+    res.setHeader(
+      "Content-Disposition",
+      `attachment; filename="KSEB-bill-${billId}.pdf"`,
+    );
+
+    // ── Create document & stream ──────────────────────────────────────────
+    const doc = new PDFDocument({ margin: 50, size: "A4" });
+    doc.pipe(res);
+
+    // ── Delegate all rendering to the generator ───────────────────────────
+    generateBillPDF(doc, bill, billId);
+    // Note: generateBillPDF calls doc.end() internally
+  } catch (err) {
+    console.error("PDF generation error:", err);
+    // Only send JSON error if headers haven't been flushed yet
+    if (!res.headersSent) {
+      res.status(500).json({ message: "Failed to generate PDF" });
+    }
+  }
 };
 
 export const dashboardController = async (req, res) => {
