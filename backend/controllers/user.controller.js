@@ -216,6 +216,7 @@ export const registerPage = (req, res) => {
 };
 export const billsPage = async (req, res) => {
   const userId = req.session.user.id;
+  const user = req.session.user;
   try {
     const snapshot = await db.ref(`monthly_bills/${userId}`).get();
     const raw = snapshot.val(); // { '-NyBill001': {...}, '-NyBill002': {...} }
@@ -225,13 +226,26 @@ export const billsPage = async (req, res) => {
       ...value,
       bill_id: key, // ← attach the Firebase key onto each bill
     }));
-    res.status(200).render("user/electricityBills", { bills });
+    res.status(200).render("user/electricityBills", { bills, user });
   } catch (error) {}
 };
-
+export const payBills = async (req, res) => {
+  try {
+    const billId = req.params.billId;
+    const userId = req.session.user.id;
+    const { status, paid_at } = req.body;
+    await db.ref(`monthly_bills/${userId}/${billId}`).update({
+      payment_status: status,
+      payment_date: paid_at,
+      payment_method: "UPI",
+    });
+    res.status(200).json({ success: true });
+  } catch (error) {}
+};
 export const billPDF = async (req, res) => {
   try {
     const userId = req.session.user.id;
+    const user = req.session.user;
     const { billId } = req.params;
 
     // ── Fetch bill from Firebase ──────────────────────────────────────────
@@ -253,7 +267,7 @@ export const billPDF = async (req, res) => {
     doc.pipe(res);
 
     // ── Delegate all rendering to the generator ───────────────────────────
-    generateBillPDF(doc, bill, billId);
+    generateBillPDF(doc, bill, billId, user);
     // Note: generateBillPDF calls doc.end() internally
   } catch (err) {
     console.error("PDF generation error:", err);

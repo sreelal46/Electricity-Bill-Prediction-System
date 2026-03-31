@@ -82,7 +82,7 @@
       </div>
       <div class="bc-modal-row">
         <span class="mk">Consumer No.</span>
-        <span class="mv mono" id="rcConsumer">—</span>
+        <span class="mv mono" id="rcConsumer">{{user.consumerNumber}}</span>
       </div>
       <div class="bc-modal-row">
         <span class="mk">Bill date</span>
@@ -166,7 +166,7 @@
     </h1>
     <div class="bills-page-subtitle">
       <span class="bills-pulse-dot"></span>
-      Account: KE-2847-5591 &nbsp;·&nbsp; Rahul Menon
+      Account: {{user.consumerNumber}} &nbsp;·&nbsp; {{user.name}}
     </div>
   </div>
 
@@ -228,12 +228,12 @@
       <button class="bc-receipt-btn" onclick="bcOpenReceipt(this)" data-id="{{this.bill_id}}"
         data-period="{{this.bill_period}}" data-bill-date="{{this.bill_generated_date}}"
         data-due-date="{{this.due_date}}" data-paid-on="{{this.payment_date}}" data-method="{{this.payment_method}}"
-        data-m1="{{this.month1_units}}" data-m2="{{this.month2_units}}" data-total-units="{{this.total_units}}"
-        data-amount="{{this.total_bill_rupees}}" data-slab1-units="{{this.slab_breakdown.slab1_units}}"
-        data-slab1-amount="{{this.slab_breakdown.slab1_amount}}" data-slab2-units="{{this.slab_breakdown.slab2_units}}"
-        data-slab2-amount="{{this.slab_breakdown.slab2_amount}}" data-slab3-units="{{this.slab_breakdown.slab3_units}}"
-        data-slab3-amount="{{this.slab_breakdown.slab3_amount}}" data-slab4-units="{{this.slab_breakdown.slab4_units}}"
-        data-slab4-amount="{{this.slab_breakdown.slab4_amount}}">
+        data-consumer-number="{{user.consumerNumber}}" data-m1="{{this.month1_units}}" data-m2="{{this.month2_units}}"
+        data-total-units="{{this.total_units}}" data-amount="{{this.total_bill_rupees}}"
+        data-slab1-units="{{this.slab_breakdown.slab1_units}}" data-slab1-amount="{{this.slab_breakdown.slab1_amount}}"
+        data-slab2-units="{{this.slab_breakdown.slab2_units}}" data-slab2-amount="{{this.slab_breakdown.slab2_amount}}"
+        data-slab3-units="{{this.slab_breakdown.slab3_units}}" data-slab3-amount="{{this.slab_breakdown.slab3_amount}}"
+        data-slab4-units="{{this.slab_breakdown.slab4_units}}" data-slab4-amount="{{this.slab_breakdown.slab4_amount}}">
         View Receipt
       </button>
       {{/if}}
@@ -285,6 +285,10 @@
 
       bcCloseModal();
       bcShowToast();
+
+      setTimeout(() => {
+        window.location.reload();
+      }, 1500);
 
       // Update card UI
       const payBtn = document.querySelector(`[data-id="${bcCurrentId}"]`);
@@ -339,11 +343,9 @@
   function bcOpenReceipt(btn) {
     const d = btn.dataset;
 
-    // ← set the bill ID onto the modal's download button
     document.querySelector('.bc-receipt-btn-download').dataset.id = d.id;
-
     document.getElementById('rcPeriod').textContent = d.period;
-    document.getElementById('rcConsumer').textContent = 'KE-2847-5591';
+    // document.getElementById('rcConsumer').textContent = "";
     document.getElementById('rcBillDate').textContent = d.billDate;
     document.getElementById('rcDueDate').textContent = d.dueDate;
     document.getElementById('rcPaidOn').textContent = d.paidOn || '—';
@@ -370,8 +372,6 @@
 
     document.getElementById('bcReceiptModal').classList.add('open');
   }
-
-
 
   function bcCloseReceipt() {
     document.getElementById('bcReceiptModal').classList.remove('open');

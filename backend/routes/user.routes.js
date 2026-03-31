@@ -14,6 +14,7 @@ import {
   registration,
   predictPage,
   billsPage,
+  payBills,
   billPDF,
   profilePage,
   dashboardController,
@@ -34,6 +35,7 @@ router.post("/dashboard/usageLimit", checkSession, usageLimit);
 
 router.get("/predictions", checkSession, predictPage);
 router.get("/bills", checkSession, billsPage);
+router.put("/bills/:billId/pay", checkSession, payBills);
 router.get("/bills/:billId/download", checkSession, billPDF);
 router.get("/alerts", checkSession, alertController);
 router.get("/profile", checkSession, profilePage);
