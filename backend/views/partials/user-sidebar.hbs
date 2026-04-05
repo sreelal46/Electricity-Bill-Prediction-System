@@ -14,6 +14,7 @@
     align-items: center;
     justify-content: center;
     z-index: 9999;
+    pointer-events: all;
     opacity: 0;
     visibility: hidden;
     transition: opacity 0.3s ease, visibility 0.3s ease;
@@ -33,6 +34,9 @@
     box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
     transform: scale(0.9) translateY(20px);
     transition: transform 0.3s ease;
+    z-index: 10000;
+    /* higher than overlay */
+    pointer-events: all;
   }
 
   .modal-overlay.show .modal-container {
@@ -252,8 +256,10 @@
     }
 
     // Cancel logout
-    cancelLogout.addEventListener('click', hideModal);
-
+    cancelLogout.addEventListener('click', function (e) {
+      e.stopPropagation();
+      hideModal();
+    });
     // Close modal on overlay click
     logoutModal.addEventListener('click', function (e) {
       if (e.target === logoutModal) {
@@ -269,8 +275,8 @@
     });
 
     // Confirm logout - Redirect to /
-    confirmLogout.addEventListener('click', function () {
-      // You can add a loading state here if needed
+    confirmLogout.addEventListener('click', function (e) {
+      e.stopPropagation();
       window.location.href = '/user/logout';
     });
   })();

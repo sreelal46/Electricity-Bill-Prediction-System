@@ -81,51 +81,28 @@ function createEmptyState(container, type = "chart") {
 if (todayReadings.length > 0) {
   const latestToday = todayReadings[todayReadings.length - 1];
 
-  const currentPowerKW = (latestToday.power / 1000).toFixed(2);
+  console.log("Sample reading:", latestToday); // 👈 check fields
+
+  const power = latestToday.power ?? 0;
+  const dailyUnits = latestToday.daily_units ?? 0;
+
+  // ✅ Fix monthly — ESP32 sends month1_units + month2_units
+  const monthlyUnits =
+    (latestToday.month1_units || 0) + (latestToday.month2_units || 0);
+
   document.getElementById("currentPower").innerHTML =
-    `${currentPowerKW} <span class="kpi-unit">kW</span>`;
+    `${(power / 1000).toFixed(2)} <span class="kpi-unit">kW</span>`;
 
-  const todayUnits = latestToday.daily_units.toFixed(2);
   document.getElementById("todayUnits").innerHTML =
-    `${todayUnits} <span class="kpi-unit">kWh</span>`;
+    `${dailyUnits.toFixed(3)} <span class="kpi-unit">kWh</span>`;
 
-  if (dailyTrend.length >= 2) {
-    const yesterday = dailyTrend[dailyTrend.length - 2].total_units || 0;
-    const today = parseFloat(todayUnits);
-    const change = (((today - yesterday) / yesterday) * 100).toFixed(1);
-    const changeEl = document.getElementById("todayChange");
-    if (change > 0) {
-      changeEl.textContent = `↑ ${change}% vs yesterday`;
-      changeEl.className = "kpi-change negative";
-    } else {
-      changeEl.textContent = `↓ ${Math.abs(change)}% vs yesterday`;
-      changeEl.className = "kpi-change positive";
-    }
-  } else {
-    document.getElementById("todayChange").textContent = "No comparison data";
-  }
+  document.getElementById("consumption").innerHTML =
+    `${monthlyUnits.toFixed(3)} <span class="kpi-unit">kWh</span>`;
 
-  const peakPower = Math.max(...todayReadings.map((r) => r.power));
-  const peakReading = todayReadings.find((r) => r.power === peakPower);
+  // Peak
+  const peakPower = Math.max(...todayReadings.map((r) => r.power ?? 0));
   document.getElementById("peak").innerHTML =
     `${(peakPower / 1000).toFixed(2)} <span class="kpi-unit">kW</span>`;
-  if (peakReading) {
-    const peakTime = peakReading.timestamp.split(" ")[1].substring(0, 5);
-    document.getElementById("peakTime").textContent = `at ${peakTime}`;
-  }
-
-  const monthlyUnits = latestToday.monthly_units.toFixed(2);
-  document.getElementById("consumption").innerHTML =
-    `${monthlyUnits} <span class="kpi-unit">kWh</span>`;
-
-  const dayOfMonth = new Date().getDate();
-  const projectedMonthly = (
-    (latestToday.monthly_units / dayOfMonth) *
-    30
-  ).toFixed(0);
-  document.getElementById("monthlyChange").textContent =
-    `~${projectedMonthly} kWh projected`;
-  document.getElementById("monthlyChange").className = "kpi-change neutral";
 } else if (latestReading) {
   console.log("📋 latestReading fields:", latestReading);
 
@@ -313,10 +290,14 @@ if (todayReadings.length > 0) {
         y: {
           beginAtZero: true,
           grid: { color: "rgba(148,163,184,0.1)" },
+          // In your loadChart options, change the Y-axis tick callback:
           ticks: {
             color: "#94a3b8",
             font: { size: 11 },
-            callback: (v) => (v / 1000).toFixed(1) + " kW",
+            callback: (v) => {
+              if (v >= 1000) return (v / 1000).toFixed(1) + " kW";
+              return v.toFixed(0) + " W"; // 👈 show in Watts when small
+            },
           },
         },
       },

@@ -138,9 +138,9 @@ export const dashboardController = async (req, res, next) => {
     //Get all users
     const usersSnap = await db.ref("users").once("value");
 
-    if (!usersSnap.exists()) {
-      return res.send("<h1>No users found</h1>");
-    }
+    // if (!usersSnap.exists()) {
+    //   return res.send("<h1>No users found</h1>");
+    // }
 
     const users = [];
     usersSnap.forEach((child) => {

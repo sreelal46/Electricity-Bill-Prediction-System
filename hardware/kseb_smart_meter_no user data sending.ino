@@ -362,8 +362,6 @@ void setup() {
     Serial.print("Cycle month role:   month"); Serial.println(cycleMonthIndex + 1);
   }
 
-  if (wifiConnected) initializeUser();
-
   Serial.println("\n✓ System ready!");
   Serial.println("✓ Scaled time active — 10min real = 1hr scaled");
   Serial.println("✓ curr_sensitivity = 124.0 (ACS712-20A)");
@@ -565,44 +563,9 @@ void getMonthlySnapshot(float& m1u, float& m2u, float& bimonthly, float& runBill
 // ============================================================
 // CLOUD UPLOAD FUNCTIONS (unchanged)
 // ============================================================
-void initializeUser() {
-  if (userInitialized || !wifiConnected) return;
-  Serial.println("\n📝 Initializing user...");
-
-  HTTPClient http;
-  WiFiClientSecure client;
-  client.setInsecure();
-  client.setTimeout(8000);
-
-  StaticJsonDocument<400> doc;
-  doc["user_id"]           = USER_ID;
-  doc["user_name"]         = USER_NAME;
-  doc["approved_phase"]    = USER_PHASE;
-  doc["approved_load_kw"]  = USER_APPROVED_LOAD;
-  doc["registration_date"] = getTimestamp();
-  doc["status"]            = "active";
-
-  String jsonString;
-  serializeJson(doc, jsonString);
-
-  String url = "https://" + String(FIREBASE_HOST) + "/users/" + String(USER_ID)
-             + ".json?auth=" + String(FIREBASE_AUTH);
-  http.begin(client, url);
-  http.addHeader("Content-Type", "application/json");
-  int httpCode = http.PUT(jsonString);
-
-  if (httpCode == 200 || httpCode == 201) {
-    Serial.println("✓ User initialized");
-    userInitialized = true;
-  } else {
-    Serial.print("✗ User init failed: "); Serial.println(httpCode);
-  }
-  http.end();
-}
 
 void uploadToFirebase(float voltage, float current, float power, float energy, float dailyEnergy) {
   if (!wifiConnected) { Serial.println("⚠️  Offline"); return; }
-  if (!userInitialized) initializeUser();
 
   float m1u, m2u, bimonthly, runBill;
   getMonthlySnapshot(m1u, m2u, bimonthly, runBill);
