@@ -31,7 +31,7 @@ const char* FIREBASE_HOST = "kseb-smart-meter-30e6c-default-rtdb.asia-southeast1
 const char* FIREBASE_AUTH = "NLY7pwQS1YtAW0azpHBufhnxVbj8AkBbTwmHrz6a";
 
 // ============ User Configuration ============
-const char* USER_ID            = "-OnVPsyJ-xP1B2vOadBb";
+const char* USER_ID            = "-OpR3l1jC4j39zgaAe5V";
 const char* USER_NAME          = "Srijith";
 const char* USER_PHASE         = "SINGLE";
 const float USER_APPROVED_LOAD = 5.0;
@@ -41,7 +41,7 @@ const float DAILY_UNIT_THRESHOLD     = 30.0;
 const float ILLEGAL_3PHASE_THRESHOLD = 7.0;
 
 // ============ Upload Settings ============
-unsigned long uploadInterval = 30000;
+unsigned long uploadInterval = 6000;
 unsigned long lastUploadTime = 0;
 
 // ============================================================
@@ -55,7 +55,7 @@ unsigned long lastUploadTime = 0;
 //   → 4 real hours   = 1 scaled day
 //   → ~2.5 real days = 1 scaled month (30 scaled days)
 // ============================================================
-#define TIME_SCALE_FACTOR     6UL
+#define TIME_SCALE_FACTOR     30UL
 
 #define SCALED_EPOCH_START    1735669800UL   // 2026-01-01 00:00:00 IST
 
@@ -323,7 +323,7 @@ void setup() {
 
   Serial.println("\n╔════════════════════════════════════════╗");
   Serial.println("║   KSEB SMART METER - TIME SCALED      ║");
-  Serial.println("║  ✓ 10 real minutes = 1 scaled hour    ║");
+  Serial.println("║  ✓ 2 real minutes = 1 scaled hour     ║");
   Serial.println("║  ✓ Starts: 2026-01-01 00:00:00        ║");
   Serial.println("║  ✓ ACS712-20A sensitivity = 124       ║");
   Serial.println("║  ✓ Adaptive Auto PF Estimation        ║");
@@ -363,7 +363,7 @@ void setup() {
   }
 
   Serial.println("\n✓ System ready!");
-  Serial.println("✓ Scaled time active — 10min real = 1hr scaled");
+  Serial.println("✓ Scaled time active — 2min real = 1hr scaled");
   Serial.println("✓ curr_sensitivity = 124.0 (ACS712-20A)");
   Serial.println("✓ PF auto-detection active (updates every 5s real)");
   Serial.println("✓ Small loads detectable from ~18W (0.08A)");

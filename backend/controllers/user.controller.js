@@ -278,141 +278,62 @@ export const billPDF = async (req, res) => {
   }
 };
 
-// export const dashboardController = async (req, res) => {
-//   const userId = req.session.user.id;
-//   console.log("=========================");
-//   console.log("User Id", userId);
-//   console.log("=========================");
-//   try {
-//     /* ===============================
-//        GET DAILY TREND (LAST 7 DAYS ONLY)
-//     =============================== */
-//     const dailySnap = await db.ref(`daily_data/${userId}`).once("value");
-
-//     const allDailyData = [];
-
-//     if (dailySnap.exists()) {
-//       dailySnap.forEach((day) => {
-//         allDailyData.push({
-//           id: day.key,
-//           ...day.val(),
-//         });
-//       });
-//     }
-
-//     // Sort by date
-//     allDailyData.sort((a, b) => new Date(a.date) - new Date(b.date));
-
-//     //  Keep only last 7 days
-//     const dailyTrend = allDailyData.slice(-7);
-
-//     // Get latest reading from daily data
-//     const latestReading =
-//       dailyTrend.length > 0 ? dailyTrend[dailyTrend.length - 1] : null;
-//     /* ===============================
-//        GET TODAY'S READINGS ONLY
-//     =============================== */
-//     const readingSnap = await db.ref(`readings/${userId}`).once("value");
-
-//     const todayReadings = [];
-//     const today = new Date().toISOString().split("T")[0]; // format: YYYY-MM-DD
-
-//     if (readingSnap.exists()) {
-//       readingSnap.forEach((child) => {
-//         const reading = child.val();
-
-//         // Filter readings for TODAY only
-//         if (reading.timestamp && reading.timestamp.startsWith(today)) {
-//           todayReadings.push({
-//             id: child.key,
-//             ...reading,
-//           });
-//         }
-//       });
-//     }
-
-//     // Sort by timestamp
-//     todayReadings.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
-
-//     const limitSnap = await db
-//       .ref("usagelimit")
-//       .orderByChild("userId")
-//       .equalTo(userId)
-//       .once("value");
-//     let amount = null;
-//     if (limitSnap.exists()) {
-//       const data = Object.values(limitSnap.val())[0];
-//       amount = data.amount;
-//     }
-//     console.log("=========================================================");
-//     console.log(dailyTrend);
-//     console.log(latestReading);
-//     console.log(todayReadings);
-//     console.log("=========================================================");
-
-//     /* ===============================
-//        RENDER DASHBOARD VIEW
-//     =============================== */
-//     res.render("user/dashboard", {
-//       // Send JSON-stringified data for Handlebars
-//       dailyTrendJSON: JSON.stringify(dailyTrend),
-//       latestReadingJSON: JSON.stringify(latestReading),
-//       todayReadingsJSON: JSON.stringify(todayReadings),
-
-//       // Also send raw data in case you want to use it directly in HBS
-//       dailyTrend,
-//       latestReading,
-//       todayReadings,
-//       amount,
-//     });
-//   } catch (err) {
-//     res.status(500).send(err.message);
-//   }
-// };
-
 export const dashboardController = async (req, res) => {
   const userId = req.session.user.id;
-
+  console.log("=========================");
+  console.log("User Id", userId);
+  console.log("=========================");
   try {
-    // ✅ Latest snapshot (always current)
-    const latestSnap = await db.ref(`latest_readings/${userId}`).once("value");
-    const latestReading = latestSnap.exists() ? latestSnap.val() : null;
-
-    // ✅ Today's readings — filter by scaled timestamp prefix
-    // Get the date from the latest reading's timestamp instead of server clock
-    const readingSnap = await db.ref(`readings/${userId}`).once("value");
-    const todayReadings = [];
-
-    // Use scaled date from latest reading, not server date
-    const scaledToday = latestReading?.timestamp?.split(" ")[0]; // "2026-01-15"
-
-    if (readingSnap.exists() && scaledToday) {
-      readingSnap.forEach((child) => {
-        const reading = child.val();
-        if (reading.timestamp && reading.timestamp.startsWith(scaledToday)) {
-          todayReadings.push({ id: child.key, ...reading });
-        }
-      });
-    }
-
-    // sorting todayReadings
-    todayReadings.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
-
-    const recentReadings = todayReadings.slice(-10); // 👈 only send 10 to frontend
-    // ✅ Daily trend — last 7 scaled days from daily_data
+    /* ===============================
+       GET DAILY TREND (LAST 7 DAYS ONLY)
+    =============================== */
     const dailySnap = await db.ref(`daily_data/${userId}`).once("value");
+
     const allDailyData = [];
 
     if (dailySnap.exists()) {
       dailySnap.forEach((day) => {
-        allDailyData.push({ id: day.key, ...day.val() });
+        allDailyData.push({
+          id: day.key,
+          ...day.val(),
+        });
       });
     }
 
+    // Sort by date
     allDailyData.sort((a, b) => new Date(a.date) - new Date(b.date));
+
+    //  Keep only last 7 days
     const dailyTrend = allDailyData.slice(-7);
 
-    // Amount limit
+    // Get latest reading from daily data
+    const latestReading =
+      dailyTrend.length > 0 ? dailyTrend[dailyTrend.length - 1] : null;
+    /* ===============================
+       GET TODAY'S READINGS ONLY
+    =============================== */
+    const readingSnap = await db.ref(`readings/${userId}`).once("value");
+
+    const todayReadings = [];
+    const today = new Date().toISOString().split("T")[0]; // format: YYYY-MM-DD
+
+    if (readingSnap.exists()) {
+      readingSnap.forEach((child) => {
+        const reading = child.val();
+
+        // Filter readings for TODAY only
+        if (reading.timestamp && reading.timestamp.startsWith(today)) {
+          todayReadings.push({
+            id: child.key,
+            ...reading,
+          });
+        }
+      });
+    }
+
+    // Sort by timestamp
+    todayReadings.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+
     const limitSnap = await db
       .ref("usagelimit")
       .orderByChild("userId")
@@ -420,17 +341,20 @@ export const dashboardController = async (req, res) => {
       .once("value");
     let amount = null;
     if (limitSnap.exists()) {
-      amount = Object.values(limitSnap.val())[0].amount;
+      const data = Object.values(limitSnap.val())[0];
+      amount = data.amount;
     }
-    console.log("=========================================================");
-    console.log(dailyTrend.length);
-    console.log(latestReading);
-    console.log(todayReadings.length);
-    console.log("=========================================================");
+
+    /* ===============================
+       RENDER DASHBOARD VIEW
+    =============================== */
     res.render("user/dashboard", {
+      // Send JSON-stringified data for Handlebars
       dailyTrendJSON: JSON.stringify(dailyTrend),
       latestReadingJSON: JSON.stringify(latestReading),
-      todayReadingsJSON: JSON.stringify(recentReadings),
+      todayReadingsJSON: JSON.stringify(todayReadings),
+
+      // Also send raw data in case you want to use it directly in HBS
       dailyTrend,
       latestReading,
       todayReadings,
@@ -440,6 +364,64 @@ export const dashboardController = async (req, res) => {
     res.status(500).send(err.message);
   }
 };
+
+// export const dashboardController = async (req, res) => {
+//   const userId = req.session.user.id;
+
+//   try {
+//     const latestSnap = await db.ref(`latest_readings/${userId}`).once("value");
+//     const latestReading = latestSnap.exists() ? latestSnap.val() : null;
+
+//     // ✅ Get ALL readings, sort, take last 10 — no date filter
+//     const readingSnap = await db.ref(`readings/${userId}`).once("value");
+//     const allReadings = [];
+
+//     if (readingSnap.exists()) {
+//       readingSnap.forEach((child) => {
+//         allReadings.push({ id: child.key, ...child.val() });
+//       });
+//     }
+
+//     allReadings.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+//     const recentReadings = allReadings.slice(-10);
+
+//     // ✅ Daily trend — last 7 days
+//     const dailySnap = await db.ref(`daily_data/${userId}`).once("value");
+//     const allDailyData = [];
+
+//     if (dailySnap.exists()) {
+//       dailySnap.forEach((day) => {
+//         allDailyData.push({ id: day.key, ...day.val() });
+//       });
+//     }
+
+//     allDailyData.sort((a, b) => new Date(a.date) - new Date(b.date));
+//     const dailyTrend = allDailyData.slice(-7);
+
+//     // Amount limit
+//     const limitSnap = await db
+//       .ref("usagelimit")
+//       .orderByChild("userId")
+//       .equalTo(userId)
+//       .once("value");
+//     let amount = null;
+//     if (limitSnap.exists()) {
+//       amount = Object.values(limitSnap.val())[0].amount;
+//     }
+
+//     res.render("user/dashboard", {
+//       dailyTrendJSON: JSON.stringify(dailyTrend),
+//       latestReadingJSON: JSON.stringify(latestReading),
+//       todayReadingsJSON: JSON.stringify(recentReadings),
+//       dailyTrend,
+//       latestReading,
+//       todayReadings: recentReadings,
+//       amount,
+//     });
+//   } catch (err) {
+//     res.status(500).send(err.message);
+//   }
+// };
 
 export const usageLimit = async (req, res) => {
   try {
@@ -521,6 +503,7 @@ export const profilePage = async (req, res, next) => {
     });
   }
 };
+
 export const predictPage = async (req, res, next) => {
   const userId = req.session.user.id;
 
@@ -689,7 +672,9 @@ export const predictPage = async (req, res, next) => {
         details: error.message,
       };
     }
-
+    console.log("======================================");
+    console.log(results);
+    console.log("======================================");
     // Render the predictions page with all data
     res.render("user/predictions", results);
   } catch (error) {
@@ -701,9 +686,216 @@ export const predictPage = async (req, res, next) => {
 };
 
 // Logout Controller
+// export const predictPage = async (req, res, next) => {
+//   const userId = req.session.user.id;
+
+//   try {
+//     // ✅ Try daily_data first, fall back to building from readings
+//     let dataArray = [];
+
+//     const dailySnap = await db.ref(`daily_data/${userId}`).once("value");
+
+//     if (dailySnap.exists()) {
+//       dataArray = Object.values(dailySnap.val());
+//     } else {
+//       // Build daily aggregates from raw readings
+//       const readingSnap = await db.ref(`readings/${userId}`).once("value");
+
+//       if (!readingSnap.exists()) {
+//         return res.render("user/predictions", {
+//           message: "No data found for this user",
+//           userId,
+//           noData: true,
+//         });
+//       }
+
+//       const dailyMap = {};
+//       readingSnap.forEach((child) => {
+//         const r = child.val();
+//         if (!r.timestamp) return;
+
+//         const date = r.timestamp.split(" ")[0]; // "2026-01-01"
+
+//         if (!dailyMap[date]) {
+//           dailyMap[date] = {
+//             date,
+//             daily_units: 0,
+//             daily_energy_wh: 0,
+//             peak_power_w: 0,
+//             avg_power_w: 0,
+//             _powerSum: 0,
+//             _count: 0,
+//           };
+//         }
+
+//         // daily_energy_wh is cumulative in ESP32 — take the max seen that day
+//         if ((r.daily_energy_wh || 0) > dailyMap[date].daily_energy_wh) {
+//           dailyMap[date].daily_energy_wh = r.daily_energy_wh;
+//           dailyMap[date].daily_units =
+//             r.daily_units || r.daily_energy_wh / 1000;
+//         }
+
+//         if ((r.power || 0) > dailyMap[date].peak_power_w) {
+//           dailyMap[date].peak_power_w = r.power;
+//         }
+
+//         dailyMap[date]._powerSum += r.power || 0;
+//         dailyMap[date]._count += 1;
+//       });
+
+//       // Compute avg and clean up temp fields
+//       dataArray = Object.values(dailyMap).map((d) => {
+//         d.avg_power_w = d._count > 0 ? d._powerSum / d._count : 0;
+//         delete d._powerSum;
+//         delete d._count;
+//         return d;
+//       });
+//     }
+
+//     if (dataArray.length === 0) {
+//       return res.render("user/predictions", {
+//         message: "No data found for this user",
+//         userId,
+//         noData: true,
+//       });
+//     }
+
+//     // Sort newest first (same as before)
+//     dataArray.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+//     const availableDays = dataArray.length;
+//     const results = {
+//       userId,
+//       availableDays,
+//       predictions: {},
+//       generatedAt: new Date().toISOString(),
+//     };
+
+//     // ---- helper to pick slice ----
+//     const pickDays = (thresholds) => {
+//       for (const [min, count] of thresholds) {
+//         if (availableDays >= min) {
+//           return { days: dataArray.slice(0, count), used: count };
+//         }
+//       }
+//       return null;
+//     };
+
+//     // DAILY PREDICTION
+//     try {
+//       const picked = pickDays([
+//         [30, 30],
+//         [14, 14],
+//         [7, 7],
+//         [3, 3],
+//       ]);
+//       if (!picked) {
+//         results.predictions.daily = {
+//           error: "Not enough data (minimum 3 days required)",
+//           availableDays,
+//         };
+//       } else {
+//         const res2 = await axios.post("http://localhost:5000/predict", {
+//           history: picked.days,
+//           prediction_type: "daily",
+//         });
+//         results.predictions.daily = {
+//           daysUsed: picked.used,
+//           inputCount: picked.days.length,
+//           prediction: res2.data,
+//         };
+//       }
+//     } catch (e) {
+//       results.predictions.daily = {
+//         error: "Failed to generate daily prediction",
+//         details: e.message,
+//       };
+//     }
+
+//     // WEEKLY PREDICTION
+//     try {
+//       const picked = pickDays([
+//         [30, 30],
+//         [21, 21],
+//         [14, 14],
+//         [7, availableDays],
+//       ]);
+//       if (!picked) {
+//         results.predictions.weekly = {
+//           error: "Not enough data (minimum 7 days required)",
+//           availableDays,
+//         };
+//       } else {
+//         const res2 = await axios.post("http://localhost:5000/predict", {
+//           history: picked.days,
+//           prediction_type: "weekly",
+//         });
+//         results.predictions.weekly = {
+//           daysUsed: picked.used,
+//           inputCount: picked.days.length,
+//           prediction: res2.data,
+//         };
+//       }
+//     } catch (e) {
+//       results.predictions.weekly = {
+//         error: "Failed to generate weekly prediction",
+//         details: e.message,
+//       };
+//     }
+
+//     // MONTHLY PREDICTION
+//     try {
+//       const picked = pickDays([
+//         [60, 60],
+//         [45, 45],
+//         [30, 30],
+//         [21, availableDays],
+//         [14, availableDays],
+//       ]);
+//       if (!picked) {
+//         results.predictions.monthly = {
+//           error: "Not enough data (minimum 14 days required)",
+//           availableDays,
+//         };
+//       } else {
+//         const res2 = await axios.post("http://localhost:5000/predict", {
+//           history: picked.days,
+//           prediction_type: "monthly",
+//         });
+//         results.predictions.monthly = {
+//           daysUsed: picked.used,
+//           inputCount: picked.days.length,
+//           prediction: res2.data,
+//         };
+//       }
+//     } catch (e) {
+//       results.predictions.monthly = {
+//         error: "Failed to generate monthly prediction",
+//         details: e.message,
+//       };
+//     }
+//     console.log("======================================");
+//     console.log(results);
+//     console.log("======================================");
+//     res.render("user/predictions", results);
+//   } catch (error) {
+//     res.status(500).render("error", {
+//       error: "Server error while generating predictions",
+//       details: error.message,
+//     });
+//   }
+// };
+
 export const logoutController = (req, res) => {
-  // Destroy the session
-  delete req.session.user;
-  // Redirect to home page
-  res.redirect("/");
+  req.session.destroy((err) => {
+    if (err) {
+      console.error("Logout error:", err);
+      return res.status(500).send("Logout failed");
+    }
+
+    // IMPORTANT: use your custom session name
+    res.clearCookie("kseb-session");
+
+    res.redirect("/");
+  });
 };

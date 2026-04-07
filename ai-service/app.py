@@ -3,312 +3,334 @@ import joblib
 import numpy as np
 import pandas as pd
 from datetime import datetime, timedelta
+import traceback
 
 app = Flask(__name__)
 
 rf = joblib.load("models/rf_model.pkl")
 iso = joblib.load("models/anomaly_model.pkl")
 
+
+# ─────────────────────────────────────────
+#  Kerala electricity bill calculator
+# ─────────────────────────────────────────
 def calculate_kerala_bill(units):
     bill = 0
     if units <= 100:
         bill = units * 4
     elif units <= 200:
-        bill = 100*4 + (units-100)*6
+        bill = 100 * 4 + (units - 100) * 6
     elif units <= 300:
-        bill = 100*4 + 100*6 + (units-200)*7
+        bill = 100 * 4 + 100 * 6 + (units - 200) * 7
     else:
-        bill = 100*4 + 100*6 + 100*7 + (units-300)*8
+        bill = 100 * 4 + 100 * 6 + 100 * 7 + (units - 300) * 8
     return round(bill, 2)
 
+
+# ─────────────────────────────────────────
+#  Robust date parser
+#  Handles: ISO strings, plain YYYY-MM-DD,
+#           Firebase ms timestamps (int/float),
+#           timezone-aware strings
+# ─────────────────────────────────────────
+def parse_date_value(val):
+    if val is None:
+        return pd.NaT
+    if isinstance(val, (int, float)):
+        # Firebase stores timestamps in milliseconds
+        return pd.Timestamp(val, unit="ms")
+    s = str(val).strip()
+    # Try most-to-least specific
+    for fmt in ("%Y-%m-%dT%H:%M:%S.%fZ", "%Y-%m-%dT%H:%M:%SZ",
+                "%Y-%m-%dT%H:%M:%S", "%Y-%m-%d"):
+        try:
+            return pd.Timestamp(datetime.strptime(s, fmt))
+        except ValueError:
+            continue
+    # Last resort: let pandas infer
+    try:
+        ts = pd.to_datetime(s, utc=True)
+        return ts.tz_localize(None)
+    except Exception:
+        return pd.NaT
+
+
+def build_dataframe(history):
+    """
+    Convert the raw history list into a clean, feature-engineered DataFrame.
+    Raises ValueError with a clear message if something is wrong.
+    """
+    if not history or not isinstance(history, list):
+        raise ValueError("history must be a non-empty list")
+
+    df = pd.DataFrame(history)
+
+    # ── Debug dump ──────────────────────────────────────────────────
+    print(f"📋 Columns received  : {df.columns.tolist()}")
+    print(f"📋 Sample row        : {df.iloc[0].to_dict()}")
+    print(f"📋 Raw date samples  : {df['date'].head(5).tolist()}")
+    # ────────────────────────────────────────────────────────────────
+
+    # Validate required columns
+    required = {"date", "daily_units"}
+    missing = required - set(df.columns)
+    if missing:
+        raise ValueError(
+            f"Missing required columns: {missing}. "
+            f"Got: {df.columns.tolist()}"
+        )
+
+    # Alias daily_units → total_units so the rest of the code stays unchanged
+    df["total_units"] = df["daily_units"]
+
+    # Parse dates
+    df["date"] = df["date"].apply(parse_date_value)
+
+    invalid_dates = df["date"].isna().sum()
+    if invalid_dates > 0:
+        bad = df[df["date"].isna()].index.tolist()
+        raise ValueError(f"{invalid_dates} date(s) could not be parsed. Indices: {bad}")
+
+    # Ensure total_units is numeric
+    df["total_units"] = pd.to_numeric(df["total_units"], errors="coerce")
+    invalid_units = df["total_units"].isna().sum()
+    if invalid_units > 0:
+        df["total_units"] = df["total_units"].fillna(df["total_units"].median())
+        print(f"⚠️  Filled {invalid_units} missing total_units with median")
+
+    df = df.sort_values("date").reset_index(drop=True)
+    print(f"📆 Date range: {df['date'].min().strftime('%Y-%m-%d')} → {df['date'].max().strftime('%Y-%m-%d')}")
+    print(f"📈 Rows after parse : {len(df)}")
+
+    # ── Feature engineering ─────────────────────────────────────────
+    df["day_of_week"]  = df["date"].dt.dayofweek
+    df["day_of_month"] = df["date"].dt.day
+    df["is_weekend"]   = (df["day_of_week"] >= 5).astype(int)
+
+    df["avg_last_3"]  = df["total_units"].rolling(3,  min_periods=1).mean()
+    df["avg_last_7"]  = df["total_units"].rolling(7,  min_periods=1).mean()
+    df["avg_last_14"] = df["total_units"].rolling(14, min_periods=1).mean()
+    df["avg_last_30"] = df["total_units"].rolling(30, min_periods=1).mean()
+
+    df["trend"]      = df["avg_last_3"] - df["avg_last_7"]
+    df["long_trend"] = df["avg_last_7"] - df["avg_last_14"]
+
+    return df
+
+
+def build_features(units, avg3, avg7, trend, day_of_week, is_weekend):
+    return np.array([[units, avg3, avg7, trend, day_of_week, is_weekend]])
+
+
+def confidence_label(data_days):
+    if data_days >= 30:
+        return "high", None
+    if data_days >= 14:
+        return "medium", "Prediction accuracy may be reduced with less than 30 days of data"
+    return "low", (
+        f"Limited data ({data_days} days). Predictions may be less accurate. "
+        "Recommended: at least 14 days of data"
+    )
+
+
+# ─────────────────────────────────────────
+#  /predict  endpoint
+# ─────────────────────────────────────────
 @app.route("/predict", methods=["POST"])
 def predict():
     try:
-        data = request.json
-        history = data["history"]
+        data = request.get_json(force=True)
+        if not data:
+            return jsonify({"error": "No JSON body received"}), 400
+
+        history         = data.get("history", [])
         prediction_type = data.get("prediction_type", "daily")
-        
+
         print(f"\n{'='*60}")
-        print(f"📊 Prediction Request: {prediction_type.upper()}")
-        print(f"📦 Received {len(history)} days of data")
+        print(f"📊 Prediction Request : {prediction_type.upper()}")
+        print(f"📦 Records received   : {len(history)}")
         print(f"{'='*60}")
 
-        df = pd.DataFrame(history)
-        
-        # Debug: Print sample dates before parsing
-        print(f"📅 Sample dates (raw): {df['date'].head(3).tolist()}")
-        
-        # Try multiple parsing strategies
+        # ── Build & validate DataFrame ───────────────────────────────
         try:
-            # Strategy 1: Try ISO8601 first
-            df["date"] = pd.to_datetime(df["date"], format='ISO8601')
-            print("✅ Parsed dates using ISO8601 format")
-        except Exception as e1:
-            print(f"⚠️ ISO8601 failed: {str(e1)[:100]}")
-            try:
-                # Strategy 2: Try explicit YYYY-MM-DD format
-                df["date"] = pd.to_datetime(df["date"], format='%Y-%m-%d')
-                print("✅ Parsed dates using YYYY-MM-DD format")
-            except Exception as e2:
-                print(f"⚠️ YYYY-MM-DD failed: {str(e2)[:100]}")
-                try:
-                    # Strategy 3: Let pandas infer
-                    df["date"] = pd.to_datetime(df["date"])
-                    print("✅ Parsed dates using pandas inference")
-                except Exception as e3:
-                    print(f"❌ All date parsing strategies failed")
-                    return jsonify({
-                        "error": "Could not parse dates",
-                        "details": str(e3)
-                    }), 400
-        
-        # Check for any invalid dates
-        if df["date"].isna().any():
-            invalid_indices = df[df["date"].isna()].index.tolist()
-            print(f"❌ Invalid dates at indices: {invalid_indices}")
-            return jsonify({
-                "error": f"Invalid dates found at positions: {invalid_indices}"
-            }), 400
-        
-        df = df.sort_values("date").reset_index(drop=True)
-        
-        print(f"📆 Date range: {df['date'].min().strftime('%Y-%m-%d')} to {df['date'].max().strftime('%Y-%m-%d')}")
-        print(f"📈 Total days after parsing: {len(df)}")
+            df = build_dataframe(history)
+        except ValueError as ve:
+            print(f"❌ DataFrame error: {ve}")
+            return jsonify({"error": str(ve)}), 400
 
-        # Feature engineering
-        df["day_of_week"] = df["date"].dt.dayofweek
-        df["day_of_month"] = df["date"].dt.day
-        df["is_weekend"] = df["day_of_week"].apply(lambda x: 1 if x >= 5 else 0)
-        df["avg_last_3"] = df["total_units"].rolling(3).mean()
-        df["avg_last_7"] = df["total_units"].rolling(7).mean()
-        df["avg_last_14"] = df["total_units"].rolling(14).mean()
-        df["avg_last_30"] = df["total_units"].rolling(30).mean()
-        
-        # Fill NaN values
-        df["avg_last_3"] = df["avg_last_3"].fillna(df["total_units"])
-        df["avg_last_7"] = df["avg_last_7"].fillna(df["total_units"])
-        df["avg_last_14"] = df["avg_last_14"].fillna(df["total_units"])
-        df["avg_last_30"] = df["avg_last_30"].fillna(df["total_units"])
-        
-        df["trend"] = df["avg_last_3"] - df["avg_last_7"]
-        df["long_trend"] = df["avg_last_7"] - df["avg_last_14"]
+        data_days            = len(df)
+        confidence, warning  = confidence_label(data_days)
 
-        latest = df.iloc[-1]
+        latest      = df.iloc[-1]
         latest_date = pd.Timestamp(latest["date"])
-        
-        print(f"🎯 Latest date: {latest_date.strftime('%Y-%m-%d')}")
-        print(f"🎯 Latest units: {latest['total_units']}")
 
-        # Anomaly detection
-        anomaly = iso.predict([[latest["total_units"]]])[0]
-        anomaly_flag = True if anomaly == -1 else False
-
-        # Base prediction for next day
-        features = np.array([[
-            latest["total_units"],
-            latest["avg_last_3"],
-            latest["avg_last_7"],
-            latest["trend"],
-            latest["day_of_week"],
-            latest["is_weekend"]
-        ]])
-        next_day_units = rf.predict(features)[0]
-        
-        print(f"🔮 Next day prediction: {round(float(next_day_units), 2)} units")
-
-        # Determine prediction confidence based on data availability
-        data_days = len(df)
-        if data_days >= 30:
-            confidence = "high"
-            warning = None
-        elif data_days >= 14:
-            confidence = "medium"
-            warning = "Prediction accuracy may be reduced with less than 30 days of data"
-        else:
-            confidence = "low"
-            warning = f"Limited data ({data_days} days). Predictions may be less accurate. Recommended: at least 14 days of data"
-        
-        print(f"📊 Data days: {data_days} | Confidence: {confidence.upper()}")
+        print(f"🎯 Latest date  : {latest_date.strftime('%Y-%m-%d')}")
+        print(f"🎯 Latest units : {latest['total_units']}")
+        print(f"📊 Confidence   : {confidence.upper()}")
         if warning:
             print(f"⚠️  {warning}")
 
-        # DAILY PREDICTION
+        # ── Anomaly detection ────────────────────────────────────────
+        anomaly_flag = iso.predict([[latest["total_units"]]])[0] == -1
+
+        # ── Next-day base prediction ─────────────────────────────────
+        base_features  = build_features(
+            latest["total_units"], latest["avg_last_3"], latest["avg_last_7"],
+            latest["trend"], latest["day_of_week"], latest["is_weekend"]
+        )
+        next_day_units = float(rf.predict(base_features)[0])
+        print(f"🔮 Next day: {round(next_day_units, 2)} units")
+
+        # ── Common response fields ───────────────────────────────────
+        common = {
+            "next_day_units"     : round(next_day_units, 2),
+            "anomaly_detected"   : bool(anomaly_flag),
+            "confidence"         : confidence,
+            "data_days"          : data_days,
+            "warning"            : warning,
+        }
+
+        # ════════════════════════════════════════════════════════════
+        #  DAILY
+        # ════════════════════════════════════════════════════════════
         if prediction_type == "daily":
-            predicted_60_days_units = next_day_units * 60
-            predicted_bill = calculate_kerala_bill(predicted_60_days_units)
-            
-            print(f"✅ Daily prediction completed")
-            print(f"{'='*60}\n")
-            
+            predicted_60d_units = next_day_units * 60
+            predicted_bill      = calculate_kerala_bill(predicted_60d_units)
+            print(f"✅ Daily prediction done\n{'='*60}\n")
             return jsonify({
-                "prediction_type": "daily",
-                "next_day_units": round(float(next_day_units), 2),
+                "prediction_type"     : "daily",
                 "predicted_2month_bill": predicted_bill,
-                "anomaly_detected": anomaly_flag,
-                "confidence": confidence,
-                "data_days": data_days,
-                "warning": warning
+                **common,
             })
 
-        # WEEKLY PREDICTION (7 days ahead)
+        # ════════════════════════════════════════════════════════════
+        #  WEEKLY  (7 days ahead)
+        # ════════════════════════════════════════════════════════════
         elif prediction_type == "weekly":
-            print(f"🔄 Generating 7-day predictions...")
+            print("🔄 Generating 7-day predictions...")
+            cur_units = latest["total_units"]
+            cur_avg3  = latest["avg_last_3"]
+            cur_avg7  = latest["avg_last_7"]
+            cur_trend = latest["trend"]
+
             weekly_predictions = []
-            current_units = latest["total_units"]
-            current_avg_3 = latest["avg_last_3"]
-            current_avg_7 = latest["avg_last_7"]
-            current_trend = latest["trend"]
-            
             for day in range(1, 8):
-                next_date = latest_date + pd.Timedelta(days=day)
-                next_day_of_week = next_date.dayofweek
-                next_is_weekend = 1 if next_day_of_week >= 5 else 0
-                
-                pred_features = np.array([[
-                    current_units,
-                    current_avg_3,
-                    current_avg_7,
-                    current_trend,
-                    next_day_of_week,
-                    next_is_weekend
-                ]])
-                
-                day_prediction = rf.predict(pred_features)[0]
+                next_date      = latest_date + pd.Timedelta(days=day)
+                dow            = next_date.dayofweek
+                is_wknd        = int(dow >= 5)
+                feats          = build_features(cur_units, cur_avg3, cur_avg7, cur_trend, dow, is_wknd)
+                day_pred       = float(rf.predict(feats)[0])
+
                 weekly_predictions.append({
-                    "day": day,
-                    "date": next_date.strftime("%Y-%m-%d"),
-                    "day_name": next_date.strftime("%A"),
-                    "predicted_units": round(float(day_prediction), 2)
+                    "day"            : day,
+                    "date"           : next_date.strftime("%Y-%m-%d"),
+                    "day_name"       : next_date.strftime("%A"),
+                    "predicted_units": round(day_pred, 2),
                 })
-                
-                current_units = day_prediction
-                current_avg_3 = (current_avg_3 * 2 + day_prediction) / 3
-                current_trend = current_avg_3 - current_avg_7
-            
-            weekly_total_units = sum([d["predicted_units"] for d in weekly_predictions])
-            weekly_avg_daily = weekly_total_units / 7
-            
-            predicted_60_days_units = weekly_avg_daily * 60
-            predicted_bill = calculate_kerala_bill(predicted_60_days_units)
-            
-            print(f"✅ Weekly prediction completed ({weekly_total_units:.2f} units total)")
-            print(f"{'='*60}\n")
-            
+
+                cur_units = day_pred
+                cur_avg3  = (cur_avg3 * 2 + day_pred) / 3
+                cur_trend = cur_avg3 - cur_avg7
+
+            weekly_total = sum(d["predicted_units"] for d in weekly_predictions)
+            weekly_avg   = weekly_total / 7
+            pred_60d     = weekly_avg * 60
+            print(f"✅ Weekly done ({weekly_total:.2f} units)\n{'='*60}\n")
+
             return jsonify({
                 "prediction_type": "weekly",
-                "next_day_units": round(float(next_day_units), 2),
                 "weekly_prediction": {
-                    "predictions": weekly_predictions,
-                    "total_weekly_units": round(float(weekly_total_units), 2),
-                    "avg_daily_units": round(float(weekly_avg_daily), 2),
-                    "start_date": (latest_date + pd.Timedelta(days=1)).strftime("%Y-%m-%d"),
-                    "end_date": (latest_date + pd.Timedelta(days=7)).strftime("%Y-%m-%d")
+                    "predictions"      : weekly_predictions,
+                    "total_weekly_units": round(weekly_total, 2),
+                    "avg_daily_units"  : round(weekly_avg, 2),
+                    "start_date"       : (latest_date + pd.Timedelta(days=1)).strftime("%Y-%m-%d"),
+                    "end_date"         : (latest_date + pd.Timedelta(days=7)).strftime("%Y-%m-%d"),
                 },
-                "predicted_2month_bill": predicted_bill,
-                "anomaly_detected": anomaly_flag,
-                "confidence": confidence,
-                "data_days": data_days,
-                "warning": warning
+                "predicted_2month_bill": calculate_kerala_bill(pred_60d),
+                **common,
             })
 
-        # MONTHLY PREDICTION (30 days ahead)
+        # ════════════════════════════════════════════════════════════
+        #  MONTHLY  (30 days ahead)
+        # ════════════════════════════════════════════════════════════
         elif prediction_type == "monthly":
-            print(f"🔄 Generating 30-day predictions...")
+            print("🔄 Generating 30-day predictions...")
+            cur_units = latest["total_units"]
+            cur_avg3  = latest["avg_last_3"]
+            cur_avg7  = latest["avg_last_7"]
+            cur_trend = latest["trend"]
+
             monthly_predictions = []
-            weekly_summaries = []
-            
-            current_units = latest["total_units"]
-            current_avg_3 = latest["avg_last_3"]
-            current_avg_7 = latest["avg_last_7"]
-            current_trend = latest["trend"]
-            
-            week_units = []
-            
+            weekly_summaries    = []
+            week_bucket         = []
+
             for day in range(1, 31):
-                next_date = latest_date + pd.Timedelta(days=day)
-                next_day_of_week = next_date.dayofweek
-                next_is_weekend = 1 if next_day_of_week >= 5 else 0
-                
-                pred_features = np.array([[
-                    current_units,
-                    current_avg_3,
-                    current_avg_7,
-                    current_trend,
-                    next_day_of_week,
-                    next_is_weekend
-                ]])
-                
-                day_prediction = rf.predict(pred_features)[0]
-                
+                next_date  = latest_date + pd.Timedelta(days=day)
+                dow        = next_date.dayofweek
+                is_wknd    = int(dow >= 5)
+                feats      = build_features(cur_units, cur_avg3, cur_avg7, cur_trend, dow, is_wknd)
+                day_pred   = float(rf.predict(feats)[0])
+
                 monthly_predictions.append({
-                    "day": day,
-                    "date": next_date.strftime("%Y-%m-%d"),
-                    "day_name": next_date.strftime("%A"),
-                    "predicted_units": round(float(day_prediction), 2)
+                    "day"            : day,
+                    "date"           : next_date.strftime("%Y-%m-%d"),
+                    "day_name"       : next_date.strftime("%A"),
+                    "predicted_units": round(day_pred, 2),
                 })
-                
-                week_units.append(day_prediction)
-                
+                week_bucket.append(day_pred)
+
                 if day % 7 == 0:
-                    week_num = day // 7
+                    wk_num = day // 7
                     weekly_summaries.append({
-                        "week": week_num,
-                        "total_units": round(float(sum(week_units)), 2),
-                        "avg_daily_units": round(float(sum(week_units) / 7), 2),
-                        "start_date": (latest_date + pd.Timedelta(days=day-6)).strftime("%Y-%m-%d"),
-                        "end_date": next_date.strftime("%Y-%m-%d")
+                        "week"           : wk_num,
+                        "total_units"    : round(sum(week_bucket), 2),
+                        "avg_daily_units": round(sum(week_bucket) / 7, 2),
+                        "start_date"     : (latest_date + pd.Timedelta(days=day - 6)).strftime("%Y-%m-%d"),
+                        "end_date"       : next_date.strftime("%Y-%m-%d"),
                     })
-                    week_units = []
-                
-                current_units = day_prediction
-                current_avg_3 = (current_avg_3 * 2 + day_prediction) / 3
+                    week_bucket = []
+
+                cur_units = day_pred
+                cur_avg3  = (cur_avg3 * 2 + day_pred) / 3
                 if day >= 7:
-                    recent_7 = [monthly_predictions[i]["predicted_units"] for i in range(max(0, day-7), day)]
-                    current_avg_7 = sum(recent_7) / len(recent_7)
-                current_trend = current_avg_3 - current_avg_7
-            
-            monthly_total_units = sum([d["predicted_units"] for d in monthly_predictions])
-            monthly_avg_daily = monthly_total_units / 30
-            
-            predicted_60_days_units = monthly_avg_daily * 60
-            predicted_bill = calculate_kerala_bill(predicted_60_days_units)
-            
-            print(f"✅ Monthly prediction completed ({monthly_total_units:.2f} units total)")
-            print(f"{'='*60}\n")
-            
+                    recent7   = [monthly_predictions[i]["predicted_units"] for i in range(max(0, day - 7), day)]
+                    cur_avg7  = sum(recent7) / len(recent7)
+                cur_trend = cur_avg3 - cur_avg7
+
+            monthly_total = sum(d["predicted_units"] for d in monthly_predictions)
+            monthly_avg   = monthly_total / 30
+            pred_60d      = monthly_avg * 60
+
+            print(f"✅ Monthly done ({monthly_total:.2f} units)\n{'='*60}\n")
+
             return jsonify({
                 "prediction_type": "monthly",
-                "next_day_units": round(float(next_day_units), 2),
                 "monthly_prediction": {
-                    "daily_predictions": monthly_predictions,
-                    "weekly_summaries": weekly_summaries,
-                    "total_monthly_units": round(float(monthly_total_units), 2),
-                    "avg_daily_units": round(float(monthly_avg_daily), 2),
-                    "start_date": (latest_date + pd.Timedelta(days=1)).strftime("%Y-%m-%d"),
-                    "end_date": (latest_date + pd.Timedelta(days=30)).strftime("%Y-%m-%d")
+                    "daily_predictions" : monthly_predictions,
+                    "weekly_summaries"  : weekly_summaries,
+                    "total_monthly_units": round(monthly_total, 2),
+                    "avg_daily_units"   : round(monthly_avg, 2),
+                    "start_date"        : (latest_date + pd.Timedelta(days=1)).strftime("%Y-%m-%d"),
+                    "end_date"          : (latest_date + pd.Timedelta(days=30)).strftime("%Y-%m-%d"),
                 },
-                "predicted_monthly_bill": calculate_kerala_bill(monthly_total_units),
-                "predicted_2month_bill": predicted_bill,
-                "anomaly_detected": anomaly_flag,
-                "confidence": confidence,
-                "data_days": data_days,
-                "warning": warning
+                "predicted_monthly_bill" : calculate_kerala_bill(monthly_total),
+                "predicted_2month_bill"  : calculate_kerala_bill(pred_60d),
+                **common,
             })
-        
+
         else:
             return jsonify({"error": "Invalid prediction_type. Use 'daily', 'weekly', or 'monthly'"}), 400
-            
+
     except Exception as e:
-        print(f"\n❌ ERROR: {str(e)}")
-        print(f"Error type: {type(e).__name__}")
-        import traceback
+        print(f"\n❌ UNHANDLED ERROR: {e}")
         traceback.print_exc()
         print(f"{'='*60}\n")
         return jsonify({
-            "error": "Prediction failed",
+            "error"  : "Prediction failed",
             "details": str(e),
-            "type": type(e).__name__
+            "type"   : type(e).__name__,
         }), 500
+
 
 if __name__ == "__main__":
     app.run(port=5000, debug=True)

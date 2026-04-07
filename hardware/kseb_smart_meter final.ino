@@ -1,12 +1,15 @@
 // ===================================================================
-// KSEB SMART METER - ESP32 Cloud Monitor (FINAL VERSION)
+// KSEB SMART METER - ESP32 Real-Time Cloud Monitor
+// ✓ REAL TIME: All timestamps use actual NTP time (IST)
+// ✓ Upload interval: 10 seconds
+// ✓ FIXED: Firebase not sending — improved HTTP handling & logging
 // ✓ FIXED: Phantom voltage readings when supply is OFF
 // ✓ FIXED: Phantom current when no load connected
 // ✓ FIXED: Energy accumulation on idle/filtered loads
-// ✓ FIXED: Firebase structure matches required schema exactly
 // ✓ FIXED: Month energy double-counting bug
 // ✓ FIXED: curr_sensitivity corrected for ACS712-20A
-// ✓ NEW:   Adaptive auto PF estimation based on load behaviour
+// ✓ Small load detection (50W TV, 65W laptop, etc.)
+// ✓ Adaptive auto PF estimation based on load behaviour
 // ===================================================================
 
 #include "driver/adc.h"
@@ -27,23 +30,49 @@ const char* FIREBASE_HOST = "kseb-smart-meter-30e6c-default-rtdb.asia-southeast1
 const char* FIREBASE_AUTH = "NLY7pwQS1YtAW0azpHBufhnxVbj8AkBbTwmHrz6a";
 
 // ============ User Configuration ============
-const char* USER_ID           = "USER001";
-const char* USER_NAME         = "John Doe";
-const char* USER_PHASE        = "SINGLE";
+const char* USER_ID            = "-OpbGh37W1lC9e0ScMwt";
+const char* USER_NAME          = "jithu";
+const char* USER_PHASE         = "SINGLE";
 const float USER_APPROVED_LOAD = 5.0;
 
 // ============ Alert Thresholds ============
-const float DAILY_UNIT_THRESHOLD      = 30.0;
-const float ILLEGAL_3PHASE_THRESHOLD  = 7.0;
+const float DAILY_UNIT_THRESHOLD     = 30.0;
+const float ILLEGAL_3PHASE_THRESHOLD = 7.0;
 
 // ============ Upload Settings ============
-unsigned long uploadInterval  = 30000;
-unsigned long lastUploadTime  = 0;
+unsigned long uploadInterval = 10000;  // 10 seconds real time
+unsigned long lastUploadTime = 0;
 
-// ============ Time Configuration ============
+// ============ Time Configuration (Real IST) ============
 const char* NTP_SERVER        = "pool.ntp.org";
-const long  GMT_OFFSET_SEC    = 19800;
+const char* NTP_SERVER2       = "time.google.com";
+const long  GMT_OFFSET_SEC    = 19800;   // IST = UTC+5:30
 const int   DAYLIGHT_OFFSET_SEC = 0;
+
+bool timeInitialized = false;
+
+// Returns real IST timestamp string
+String getTimestamp() {
+  if (!timeInitialized) return "NOT_SYNCED";
+  struct tm timeinfo;
+  if (!getLocalTime(&timeinfo, 2000)) return "TIME_ERROR";
+  char buffer[25];
+  strftime(buffer, sizeof(buffer), "%Y-%m-%d %H:%M:%S", &timeinfo);
+  return String(buffer);
+}
+
+String getDateOnly() {
+  if (!timeInitialized) return "NOT_SYNCED";
+  struct tm timeinfo;
+  if (!getLocalTime(&timeinfo, 2000)) return "DATE_ERROR";
+  char buffer[15];
+  strftime(buffer, sizeof(buffer), "%Y-%m-%d", &timeinfo);
+  return String(buffer);
+}
+
+bool getLocalTimeIST(struct tm* t) {
+  return getLocalTime(t, 2000);
+}
 
 // ---- Voltage Sensor (ZMPT101B) ----
 #define VOLT_PIN    36
@@ -51,27 +80,19 @@ int   volt_offset = 1820;
 float volt_calib  = 0.76;
 
 // ---- Current Sensor (ACS712 20A) ----
-// ✓ FIXED: ACS712-20A datasheet sensitivity = 100mV/A
-// ESP32 ADC: 12-bit (4096 steps), 3.3V reference
-// counts/A = 100mV/A × (4096 / 3300mV) = 124.1
-// ✓ ANSWER TO YOUR QUESTION: 124.0 is correct for ALL loads,
-//   not just 800W. It is a hardware constant of ACS712-20A.
-//   It works for small loads (5W bulb) and large loads (2000W iron).
-//   Fine-tune with a clamp meter: if display shows 3.20A but
-//   clamp shows 3.47A → new value = 124 × (3.20/3.47) = 114
 #define CURR_PIN         34
 int   curr_offset      = 2900;
-float curr_sensitivity = 124.0;   // ✓ FIXED from 139.0 → 124.0 (ACS712-20A)
+float curr_sensitivity = 124.0;
 
 // Filtering
 float smoothCurrent = 0.0;
 float smoothVoltage = 0.0;
 float alpha         = 0.2;
 
-// Current thresholds
-const float NOISE_FLOOR            = 0.20;
-const float CONFIRMATION_THRESHOLD = 0.25;
-const float DIRECT_ACCEPT          = 0.40;
+// Current detection thresholds
+const float NOISE_FLOOR            = 0.08;
+const float CONFIRMATION_THRESHOLD = 0.10;
+const float DIRECT_ACCEPT          = 0.30;
 
 // Voltage detection
 const float VOLTAGE_THRESHOLD       = 150.0;
@@ -86,52 +107,31 @@ bool supplyIsOn                = false;
 // Load confirmation
 int  consecutiveHighReadings = 0;
 int  consecutiveLowReadings  = 0;
-const int CONFIRMATION_SAMPLES = 5;
 
-// Power validity flag
 bool powerIsValid = false;
 
 // ============================================================
 // ADAPTIVE PF ESTIMATION
 // ============================================================
-// How it works:
-//   Every 5 seconds we look at how STABLE the current is.
-//   Stable current = resistive load (heater, iron, sandwich maker) → PF = 1.0
-//   Moderate variation = motor load (fan, fridge) → PF = 0.80
-//   High variation = mixed loads → PF = 0.85
-//   Low stable current = electronics (TV, charger) → PF = 0.70
-//   Near zero = standby → PF = 0.65
-//
-// This requires NO extra hardware. It uses your existing ACS712 readings.
-// Accuracy: ±0.05–0.10 (good enough for student demo project)
-// ============================================================
-#define PF_HISTORY_SIZE       10
-float currentHistory[PF_HISTORY_SIZE] = {0};
-int   pfHistoryIndex    = 0;
-float measuredPF        = 0.85f;   // starts with safe default
-float displayPF         = 0.85f;   // smoothed PF for display
+#define PF_HISTORY_SIZE   10
+float  currentHistory[PF_HISTORY_SIZE] = {0};
+int    pfHistoryIndex   = 0;
+float  measuredPF       = 0.85f;
+float  displayPF        = 0.85f;
 String currentLoadType  = "UNKNOWN";
 unsigned long lastPFCheckTime = 0;
 
 float estimateLoadPF() {
   unsigned long now = millis();
-
-  // Only re-estimate every 5 seconds
-  if (now - lastPFCheckTime < 5000) {
-    return measuredPF;
-  }
+  if (now - lastPFCheckTime < 5000) return measuredPF;
   lastPFCheckTime = now;
 
-  // Store current sample into circular history
   currentHistory[pfHistoryIndex % PF_HISTORY_SIZE] = smoothCurrent;
   pfHistoryIndex++;
 
-  // Need at least 5 samples before making a decision
   if (pfHistoryIndex < 5) return measuredPF;
 
-  // Calculate mean and standard deviation of recent current samples
-  float sum   = 0.0f;
-  float sumSq = 0.0f;
+  float sum = 0.0f, sumSq = 0.0f;
   int   count = min(pfHistoryIndex, PF_HISTORY_SIZE);
 
   for (int i = 0; i < count; i++) {
@@ -141,65 +141,38 @@ float estimateLoadPF() {
 
   float mean     = sum / count;
   float variance = (sumSq / count) - (mean * mean);
-  if (variance < 0) variance = 0;   // floating point safety
-  float stdDev   = sqrt(variance);
-
-  // CV = Coefficient of Variation (%) = how much current fluctuates
-  // Low CV  → stable current  → resistive load
-  // High CV → varying current → motor or mixed load
+  if (variance < 0) variance = 0;
+  float stdDev    = sqrt(variance);
   float cvPercent = (mean > 0.1f) ? (stdDev / mean) * 100.0f : 0.0f;
 
-  float    newPF;
-  String   loadType;
+  float  newPF;
+  String loadType;
 
-  // ── Decision logic ──────────────────────────────────────────────────
   if (mean < 0.15f) {
-    // Virtually no load → standby / supply on but nothing connected
-    newPF    = 0.65f;
-    loadType = "STANDBY";
-
+    newPF    = 0.65f; loadType = "STANDBY";
   } else if (cvPercent < 3.0f && mean >= 2.0f) {
-    // Very stable AND high current → pure resistive
-    // Examples: sandwich maker, electric iron, water heater, room heater
-    newPF    = 1.0f;
-    loadType = "RESISTIVE (heater/iron/sandwich maker)";
-
+    newPF    = 1.0f;  loadType = "RESISTIVE (heater/iron/sandwich maker)";
   } else if (cvPercent < 3.0f && mean >= 0.5f && mean < 2.0f) {
-    // Stable but medium current → could be LED driver or small resistive
-    newPF    = 0.75f;
-    loadType = "SMALL RESISTIVE / LED DRIVER";
-
+    newPF    = 0.75f; loadType = "SMALL RESISTIVE / LED DRIVER";
   } else if (cvPercent < 3.0f && mean < 0.5f) {
-    // Stable very low current → phone charger, LED bulb, electronics
-    newPF    = 0.65f;
-    loadType = "ELECTRONICS / CHARGER";
-
+    newPF    = 0.65f; loadType = "ELECTRONICS / CHARGER";
   } else if (cvPercent >= 3.0f && cvPercent < 8.0f) {
-    // Moderate fluctuation → inductive motor load
-    // Examples: ceiling fan, refrigerator compressor, washing machine
-    newPF    = 0.80f;
-    loadType = "MOTOR LOAD (fan/fridge/pump)";
-
+    newPF    = 0.80f; loadType = "MOTOR LOAD (fan/fridge/pump)";
   } else {
-    // High fluctuation → multiple different loads switching
-    // Examples: whole house, TV + fan + lights all together
-    newPF    = 0.85f;
-    loadType = "MIXED HOME LOADS";
+    newPF    = 0.85f; loadType = "MIXED HOME LOADS";
   }
 
-  // Smooth PF slowly so it doesn't jump suddenly between readings
-  // 20% new value + 80% old value = gradual adaptation
-  measuredPF    = (0.2f * newPF) + (0.8f * measuredPF);
-  displayPF     = measuredPF;
+  measuredPF      = (0.2f * newPF) + (0.8f * measuredPF);
+  displayPF       = measuredPF;
   currentLoadType = loadType;
 
-  // Print PF detection result to serial every 5 seconds
   Serial.println("\n── Auto PF Detection ──────────────────────");
   Serial.print("   Avg Current : "); Serial.print(mean, 3);      Serial.println(" A");
   Serial.print("   Std Dev     : "); Serial.print(stdDev, 4);    Serial.println(" A");
   Serial.print("   CV          : "); Serial.print(cvPercent, 1); Serial.println(" %");
   Serial.print("   Load Type   : "); Serial.println(loadType);
   Serial.print("   Est. PF     : "); Serial.println(measuredPF, 3);
+  Serial.print("   Time (IST)  : "); Serial.println(getTimestamp());
   Serial.println("────────────────────────────────────────────");
 
   return measuredPF;
@@ -208,10 +181,9 @@ float estimateLoadPF() {
 // ============================================================
 // Energy tracking
 // ============================================================
-float totalEnergyWh  = 0.0;
-float dailyEnergyWh  = 0.0;
+float totalEnergyWh = 0.0;
+float dailyEnergyWh = 0.0;
 
-// Bi-monthly cycle tracking
 int   cycleMonthIndex = 0;
 float month1EnergyWh  = 0.0;
 float month2EnergyWh  = 0.0;
@@ -224,20 +196,16 @@ int  lastMonth = -1;
 bool dailyAlertSent        = false;
 bool illegalUsageAlertSent = false;
 
-// Daily statistics
-float         dailyPeakPower   = 0.0;
-float         dailyAvgPower    = 0.0;
-float         dailyMinPower    = 99999.0;
+float         dailyPeakPower    = 0.0;
+float         dailyAvgPower     = 0.0;
+float         dailyMinPower     = 99999.0;
 unsigned long dailyPowerSamples = 0;
-float         dailyPowerSum    = 0.0;
+float         dailyPowerSum     = 0.0;
 
-// Hour-wise consumption
 float hourlyEnergy[24] = {0};
 int   currentHour = -1;
 
-// WiFi status
 bool wifiConnected   = false;
-bool userInitialized = false;
 
 // ============================================================
 // BILLING HELPERS
@@ -307,6 +275,75 @@ void fillSlabBreakdown(JsonObject& slabObj, float units) {
 }
 
 // ============================================================
+// FIREBASE HTTP HELPER — single reusable function
+// Fixes the main reason data wasn't uploading:
+//   - Uses a shared WiFiClientSecure with longer timeout
+//   - Logs exact HTTP response code always
+//   - Returns true/false for caller to check
+// ============================================================
+bool firebasePUT(const String& path, const String& jsonBody) {
+  WiFiClientSecure client;
+  client.setInsecure();
+  client.setTimeout(10);  // 10 second TCP timeout
+
+  HTTPClient http;
+  String url = "https://" + String(FIREBASE_HOST) + path + "?auth=" + String(FIREBASE_AUTH);
+
+  if (!http.begin(client, url)) {
+    Serial.println("  ✗ http.begin() failed for: " + path);
+    return false;
+  }
+
+  http.addHeader("Content-Type", "application/json");
+  http.setTimeout(8000);  // 8s HTTP timeout
+
+  int code = http.PUT(jsonBody);
+  bool ok = (code == 200 || code == 204);
+
+  Serial.print("  PUT "); Serial.print(path);
+  Serial.print(" → HTTP "); Serial.print(code);
+  Serial.println(ok ? " ✓" : " ✗");
+
+  if (!ok && code > 0) {
+    Serial.print("  Response: "); Serial.println(http.getString().substring(0, 100));
+  }
+
+  http.end();
+  return ok;
+}
+
+bool firebasePOST(const String& path, const String& jsonBody) {
+  WiFiClientSecure client;
+  client.setInsecure();
+  client.setTimeout(10);
+
+  HTTPClient http;
+  String url = "https://" + String(FIREBASE_HOST) + path + "?auth=" + String(FIREBASE_AUTH);
+
+  if (!http.begin(client, url)) {
+    Serial.println("  ✗ http.begin() failed for: " + path);
+    return false;
+  }
+
+  http.addHeader("Content-Type", "application/json");
+  http.setTimeout(8000);
+
+  int code = http.POST(jsonBody);
+  bool ok = (code == 200 || code == 201);
+
+  Serial.print("  POST "); Serial.print(path);
+  Serial.print(" → HTTP "); Serial.print(code);
+  Serial.println(ok ? " ✓" : " ✗");
+
+  if (!ok && code > 0) {
+    Serial.print("  Response: "); Serial.println(http.getString().substring(0, 100));
+  }
+
+  http.end();
+  return ok;
+}
+
+// ============================================================
 // SETUP
 // ============================================================
 void setup() {
@@ -314,16 +351,17 @@ void setup() {
   delay(1000);
 
   Serial.println("\n╔════════════════════════════════════════╗");
-  Serial.println("║     KSEB SMART METER SYSTEM  FINAL    ║");
-  Serial.println("║  ✓ ACS712-20A sensitivity = 124       ║");
-  Serial.println("║  ✓ Adaptive Auto PF Estimation        ║");
-  Serial.println("║  ✓ Month energy real-time tracking    ║");
-  Serial.println("║  ✓ Firebase structure correct         ║");
+  Serial.println("║   KSEB SMART METER - REAL TIME         ║");
+  Serial.println("║  ✓ Real IST timestamps via NTP         ║");
+  Serial.println("║  ✓ Upload every 10 seconds             ║");
+  Serial.println("║  ✓ ACS712-20A sensitivity = 124        ║");
+  Serial.println("║  ✓ Adaptive Auto PF Estimation         ║");
+  Serial.println("║  ✓ Small load detection enabled        ║");
   Serial.println("╚════════════════════════════════════════╝\n");
 
   Serial.print("User ID: ");        Serial.println(USER_ID);
   Serial.print("Approved Phase: "); Serial.println(USER_PHASE);
-  Serial.print("Approved Load: ");  Serial.print(USER_APPROVED_LOAD); Serial.println(" kW\n");
+  Serial.print("Approved Load: ");  Serial.print(USER_APPROVED_LOAD); Serial.println(" kW");
 
   analogReadResolution(12);
   analogSetAttenuation(ADC_11db);
@@ -332,15 +370,49 @@ void setup() {
   calibrateOffsets();
 
   connectWiFi();
-  if (wifiConnected) syncTime();
 
-  Serial.println("\n✓ System ready!");
-  Serial.println("✓ curr_sensitivity = 124.0 (ACS712-20A correct value)");
-  Serial.println("✓ PF auto-detection active (updates every 5s)");
-  Serial.println("✓ Month energy accumulates in real-time");
+  if (wifiConnected) {
+    Serial.println("🕐 Syncing time via NTP...");
+    configTime(GMT_OFFSET_SEC, DAYLIGHT_OFFSET_SEC, NTP_SERVER, NTP_SERVER2);
+
+    // Wait up to 10 seconds for NTP sync
+    struct tm timeinfo;
+    int retries = 0;
+    while (!getLocalTime(&timeinfo, 1000) && retries < 10) {
+      Serial.print(".");
+      retries++;
+      delay(1000);
+    }
+
+    if (getLocalTime(&timeinfo, 2000)) {
+      timeInitialized = true;
+      Serial.println("\n✓ Time synced!");
+      Serial.print("  Current IST: "); Serial.println(getTimestamp());
+    } else {
+      Serial.println("\n✗ NTP sync failed — timestamps will show TIME_ERROR");
+    }
+  }
+
+  // Initialize day/month tracking from real time
+  {
+    struct tm t;
+    if (getLocalTimeIST(&t)) {
+      lastDay     = t.tm_mday;
+      lastMonth   = t.tm_mon;
+      currentHour = t.tm_hour;
+
+      int month1based = t.tm_mon + 1;
+      cycleMonthIndex = getCycleMonthIndex(month1based);
+      Serial.print("Current date: "); Serial.println(getDateOnly());
+      Serial.print("Cycle month role: month"); Serial.println(cycleMonthIndex + 1);
+    }
+  }
+
+  Serial.println("\n✓ System ready! Uploading every 10 seconds.");
   Serial.println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n");
 
   lastEnergyUpdate = millis();
+  lastUploadTime   = millis() - uploadInterval;  // Force first upload immediately
   delay(1000);
 }
 
@@ -351,7 +423,7 @@ void connectWiFi() {
   WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
 
   int attempts = 0;
-  while (WiFi.status() != WL_CONNECTED && attempts < 20) {
+  while (WiFi.status() != WL_CONNECTED && attempts < 30) {
     delay(500);
     Serial.print(".");
     attempts++;
@@ -360,38 +432,10 @@ void connectWiFi() {
   if (WiFi.status() == WL_CONNECTED) {
     wifiConnected = true;
     Serial.println(" ✓");
-    Serial.print("   IP: "); Serial.println(WiFi.localIP());
+    Serial.print("  IP: "); Serial.println(WiFi.localIP());
   } else {
     wifiConnected = false;
     Serial.println(" ✗ WiFi Failed! Running offline.");
-  }
-}
-
-// ============================================================
-void syncTime() {
-  Serial.print("🕒 Syncing time");
-  configTime(GMT_OFFSET_SEC, DAYLIGHT_OFFSET_SEC, NTP_SERVER);
-
-  struct tm timeinfo;
-  int attempts = 0;
-  while (!getLocalTime(&timeinfo) && attempts < 5) {
-    Serial.print(".");
-    delay(500);
-    attempts++;
-  }
-
-  if (attempts < 5) {
-    Serial.println(" ✓");
-    lastDay     = timeinfo.tm_mday;
-    lastMonth   = timeinfo.tm_mon;
-    currentHour = timeinfo.tm_hour;
-
-    int month1based = timeinfo.tm_mon + 1;
-    cycleMonthIndex = getCycleMonthIndex(month1based);
-    Serial.print("   Cycle month role: month");
-    Serial.println(cycleMonthIndex + 1);
-  } else {
-    Serial.println(" ✗");
   }
 }
 
@@ -407,13 +451,13 @@ void calibrateOffsets() {
 
   long sumNoise = 0;
   for (int i = 0; i < 2000; i++) {
-    int adc     = analogRead(CURR_PIN);
+    int adc      = analogRead(CURR_PIN);
     int centered = adc - curr_offset;
-    sumNoise   += (long)centered * (long)centered;
+    sumNoise    += (long)centered * (long)centered;
     delayMicroseconds(50);
   }
   float noiseRMS = sqrt((float)sumNoise / 2000);
-  current_noise_baseline = (noiseRMS / curr_sensitivity) * 1.5f;
+  current_noise_baseline = (noiseRMS / curr_sensitivity) * 1.1f;
 
   Serial.print("  V-offset: ");        Serial.print(volt_offset);
   Serial.print(" | I-offset: ");       Serial.print(curr_offset);
@@ -422,10 +466,10 @@ void calibrateOffsets() {
 }
 
 // ============================================================
-// VOLTAGE MEASUREMENT (unchanged)
+// VOLTAGE MEASUREMENT
 // ============================================================
 float measureVoltage() {
-  long sumVolt  = 0;
+  long sumVolt = 0;
   const int samples = 1000;
   for (int i = 0; i < samples; i++) {
     int adc     = analogRead(VOLT_PIN);
@@ -454,13 +498,12 @@ bool checkSupplyState(float voltage) {
     if (consecutiveVoltageAbsent >= VOLTAGE_CONFIRM_SAMPLES) {
       if (supplyIsOn) {
         Serial.println("\n✗ AC SUPPLY LOST - System OFF");
-        smoothCurrent            = 0.0f;
-        consecutiveHighReadings  = 0;
-        consecutiveLowReadings   = 0;
-        // Reset PF history when supply lost
-        pfHistoryIndex           = 0;
-        measuredPF               = 0.85f;
-        currentLoadType          = "UNKNOWN";
+        smoothCurrent           = 0.0f;
+        consecutiveHighReadings = 0;
+        consecutiveLowReadings  = 0;
+        pfHistoryIndex          = 0;
+        measuredPF              = 0.85f;
+        currentLoadType         = "UNKNOWN";
       }
       supplyIsOn = false;
       return false;
@@ -470,10 +513,10 @@ bool checkSupplyState(float voltage) {
 }
 
 // ============================================================
-// CURRENT MEASUREMENT (unchanged logic, fixed sensitivity)
+// CURRENT MEASUREMENT
 // ============================================================
 float measureCurrentRaw() {
-  long sumCurr  = 0;
+  long sumCurr = 0;
   const int samples = 1000;
   for (int i = 0; i < samples; i++) {
     int adc     = analogRead(CURR_PIN);
@@ -483,8 +526,8 @@ float measureCurrentRaw() {
   }
   float rmsADC  = sqrt((float)sumCurr / samples);
   float current = (rmsADC / curr_sensitivity) - current_noise_baseline;
-  if (current < 0)     current = 0.0f;
-  if (current < 0.15f) return 0.0f;
+  if (current < 0) current = 0.0f;
+  if (current < 0.05f) return 0.0f;
   return current;
 }
 
@@ -502,12 +545,12 @@ float smartFilter(float rawCurrent) {
   if (rawCurrent >= CONFIRMATION_THRESHOLD) {
     consecutiveHighReadings++;
     consecutiveLowReadings = 0;
-    if (consecutiveHighReadings >= CONFIRMATION_SAMPLES) return rawCurrent;
+    if (consecutiveHighReadings >= 3) return rawCurrent;
     return 0.0f;
   }
   consecutiveLowReadings++;
   if (consecutiveHighReadings > 8) return rawCurrent;
-  if (smoothCurrent > 0.25f && consecutiveHighReadings > 5) return rawCurrent;
+  if (smoothCurrent > 0.10f && consecutiveHighReadings > 3) return rawCurrent;
   return 0.0f;
 }
 
@@ -526,54 +569,22 @@ void getMonthlySnapshot(float& m1u, float& m2u, float& bimonthly, float& runBill
 }
 
 // ============================================================
-// CLOUD UPLOAD FUNCTIONS
+// CLOUD UPLOAD — Main reading (PUT to latest_readings, POST to readings)
 // ============================================================
-
-void initializeUser() {
-  if (userInitialized || !wifiConnected) return;
-  Serial.println("\n📝 Initializing user...");
-
-  HTTPClient http;
-  WiFiClientSecure client;
-  client.setInsecure();
-  client.setTimeout(8000);
-
-  StaticJsonDocument<400> doc;
-  doc["user_id"]          = USER_ID;
-  doc["user_name"]        = USER_NAME;
-  doc["approved_phase"]   = USER_PHASE;
-  doc["approved_load_kw"] = USER_APPROVED_LOAD;
-  doc["registration_date"]= getTimestamp();
-  doc["status"]           = "active";
-
-  String jsonString;
-  serializeJson(doc, jsonString);
-
-  String url = "https://" + String(FIREBASE_HOST) + "/users/" + String(USER_ID)
-             + ".json?auth=" + String(FIREBASE_AUTH);
-  http.begin(client, url);
-  http.addHeader("Content-Type", "application/json");
-  int httpCode = http.PUT(jsonString);
-
-  if (httpCode == 200 || httpCode == 201) {
-    Serial.println("✓ User initialized");
-    userInitialized = true;
-  } else {
-    Serial.print("✗ User init failed: "); Serial.println(httpCode);
-  }
-  http.end();
-}
-
 void uploadToFirebase(float voltage, float current, float power, float energy, float dailyEnergy) {
-  if (!wifiConnected) { Serial.println("⚠️  Offline"); return; }
-  if (!userInitialized) initializeUser();
+  if (WiFi.status() != WL_CONNECTED) {
+    Serial.println("⚠️  WiFi disconnected — skipping upload");
+    wifiConnected = false;
+    return;
+  }
+  wifiConnected = true;
 
   float m1u, m2u, bimonthly, runBill;
   getMonthlySnapshot(m1u, m2u, bimonthly, runBill);
 
   float dailyUnits = round((dailyEnergy / 1000.0f) * 1000) / 1000.0f;
 
-  StaticJsonDocument<700> doc;
+  StaticJsonDocument<900> doc;
   doc["user_id"]             = USER_ID;
   doc["timestamp"]           = getTimestamp();
   doc["voltage"]             = round(voltage  * 100) / 100.0f;
@@ -593,58 +604,29 @@ void uploadToFirebase(float voltage, float current, float power, float energy, f
   String jsonString;
   serializeJson(doc, jsonString);
 
-  // POST to /readings
-  {
-    HTTPClient http;
-    WiFiClientSecure client;
-    client.setInsecure();
-    client.setTimeout(8000);
-    String url = "https://" + String(FIREBASE_HOST) + "/readings/" + String(USER_ID)
-               + ".json?auth=" + String(FIREBASE_AUTH);
-    http.begin(client, url);
-    http.addHeader("Content-Type", "application/json");
-    int httpCode = http.POST(jsonString);
-    Serial.print("\n📤 readings/: ");
-    Serial.println((httpCode == 200 || httpCode == 201) ? "✓" : "✗ " + String(httpCode));
-    http.end();
-  }
+  Serial.println("\n📤 Uploading to Firebase...");
 
-  // PUT to /latest_readings
-  {
-    HTTPClient http;
-    WiFiClientSecure client;
-    client.setInsecure();
-    client.setTimeout(5000);
-    String url = "https://" + String(FIREBASE_HOST) + "/latest_readings/" + String(USER_ID)
-               + ".json?auth=" + String(FIREBASE_AUTH);
-    http.begin(client, url);
-    http.addHeader("Content-Type", "application/json");
-    int httpCode = http.PUT(jsonString);
-    Serial.print("📤 latest_readings/: ");
-    Serial.println((httpCode == 200 || httpCode == 201) ? "✓" : "✗ " + String(httpCode));
-    http.end();
-  }
+  // PUT to latest_readings (overwrites, fast)
+  String latestPath = "/latest_readings/" + String(USER_ID) + ".json";
+  firebasePUT(latestPath, jsonString);
+
+  // POST to readings (appends new entry)
+  String readingsPath = "/readings/" + String(USER_ID) + ".json";
+  firebasePOST(readingsPath, jsonString);
 
   checkAlerts(power, dailyEnergy);
 }
 
 void uploadDailySummary(String date) {
-  if (!wifiConnected) return;
+  if (WiFi.status() != WL_CONNECTED) return;
   Serial.println("\n📊 Uploading daily summary...");
-
-  HTTPClient http;
-  WiFiClientSecure client;
-  client.setInsecure();
-  client.setTimeout(8000);
 
   float dailyUnits = round((dailyEnergyWh / 1000.0f) * 100) / 100.0f;
 
-  struct tm timeinfo;
-  String monthRole = "month1";
-  if (getLocalTime(&timeinfo)) {
-    int month1based = timeinfo.tm_mon + 1;
-    monthRole = (getCycleMonthIndex(month1based) == 0) ? "month1" : "month2";
-  }
+  struct tm t;
+  getLocalTimeIST(&t);
+  int month1based = t.tm_mon + 1;
+  String monthRole = (getCycleMonthIndex(month1based) == 0) ? "month1" : "month2";
 
   DynamicJsonDocument doc(1024);
   doc["user_id"]         = USER_ID;
@@ -662,32 +644,19 @@ void uploadDailySummary(String date) {
   doc["approved_phase"]   = USER_PHASE;
   doc["approved_load_kw"] = USER_APPROVED_LOAD;
 
-  String jsonString;
-  serializeJson(doc, jsonString);
+  String js;
+  serializeJson(doc, js);
 
-  String url = "https://" + String(FIREBASE_HOST) + "/daily_data/" + String(USER_ID)
-             + ".json?auth=" + String(FIREBASE_AUTH);
-  http.begin(client, url);
-  http.addHeader("Content-Type", "application/json");
-  int httpCode = http.POST(jsonString);
-  if (httpCode == 200 || httpCode == 201) {
-    Serial.println("✓ Daily summary uploaded");
-    Serial.print("   Date: "); Serial.print(date);
-    Serial.print(" | Units: "); Serial.print(dailyUnits);
-    Serial.print(" kWh | Role: "); Serial.println(monthRole);
-  } else {
-    Serial.print("✗ Daily summary failed: "); Serial.println(httpCode);
+  String path = "/daily_data/" + String(USER_ID) + ".json";
+  if (firebasePOST(path, js)) {
+    Serial.print("✓ Daily summary: "); Serial.print(date);
+    Serial.print(" | "); Serial.print(dailyUnits); Serial.print(" kWh | role: ");
+    Serial.println(monthRole);
   }
-  http.end();
 }
 
 void uploadRunningBill(String date, float dailyUnits) {
-  if (!wifiConnected) return;
-
-  HTTPClient http;
-  WiFiClientSecure client;
-  client.setInsecure();
-  client.setTimeout(8000);
+  if (WiFi.status() != WL_CONNECTED) return;
 
   float thisMonthWh        = (cycleMonthIndex == 0) ? month1EnergyWh : month2EnergyWh;
   float thisMonthUnits     = thisMonthWh / 1000.0f;
@@ -702,33 +671,23 @@ void uploadRunningBill(String date, float dailyUnits) {
   doc["daily_bill"]           = dailyBill;
   doc["running_monthly_bill"] = runningMonthlyBill;
 
-  String jsonString;
-  serializeJson(doc, jsonString);
+  String js;
+  serializeJson(doc, js);
 
-  String url = "https://" + String(FIREBASE_HOST) + "/running_bills/" + String(USER_ID)
-             + ".json?auth=" + String(FIREBASE_AUTH);
-  http.begin(client, url);
-  http.addHeader("Content-Type", "application/json");
-  http.POST(jsonString);
-  http.end();
-  Serial.print("💰 Running bill uploaded | Daily: ₹"); Serial.print(dailyBill);
+  String path = "/running_bills/" + String(USER_ID) + ".json";
+  firebasePOST(path, js);
+  Serial.print("💰 Daily: ₹"); Serial.print(dailyBill);
   Serial.print(" | Monthly so far: ₹"); Serial.println(runningMonthlyBill);
 }
 
 void uploadMonthlyRecord(int month1based, int year, float monthUnits) {
-  if (!wifiConnected) return;
-
-  HTTPClient http;
-  WiFiClientSecure client;
-  client.setInsecure();
-  client.setTimeout(8000);
+  if (WiFi.status() != WL_CONNECTED) return;
 
   float totalBill = round(calculateMonthlyBill(monthUnits) * 100) / 100.0f;
 
-  int cycleEndMonth1based = (month1based % 2 == 0) ? month1based : month1based + 1;
-  int dueMonth = cycleEndMonth1based + 1;
+  int dueMonth = (month1based % 2 == 0) ? month1based + 1 : month1based + 2;
   int dueYear  = year;
-  if (dueMonth > 12) { dueMonth = 1; dueYear++; }
+  if (dueMonth > 12) { dueMonth -= 12; dueYear++; }
 
   int lastDayOfMonth = 31;
   if (month1based == 2) lastDayOfMonth = (year % 4 == 0) ? 29 : 28;
@@ -736,8 +695,8 @@ void uploadMonthlyRecord(int month1based, int year, float monthUnits) {
            month1based == 9 || month1based == 11) lastDayOfMonth = 30;
 
   char periodFrom[12], periodTo[12], dueDate[12];
-  snprintf(periodFrom, sizeof(periodFrom), "%04d-%02d-01",   year,    month1based);
-  snprintf(periodTo,   sizeof(periodTo),   "%04d-%02d-%02d", year,    month1based, lastDayOfMonth);
+  snprintf(periodFrom, sizeof(periodFrom), "%04d-%02d-01",   year, month1based);
+  snprintf(periodTo,   sizeof(periodTo),   "%04d-%02d-%02d", year, month1based, lastDayOfMonth);
   snprintf(dueDate,    sizeof(dueDate),    "%04d-%02d-15",   dueYear, dueMonth);
 
   StaticJsonDocument<400> doc;
@@ -751,26 +710,18 @@ void uploadMonthlyRecord(int month1based, int year, float monthUnits) {
   doc["payment_status"]   = "unpaid";
   doc["timestamp"]        = getTimestamp();
 
-  String jsonString;
-  serializeJson(doc, jsonString);
+  String js;
+  serializeJson(doc, js);
 
-  String url = "https://" + String(FIREBASE_HOST) + "/monthly_records/" + String(USER_ID)
-             + ".json?auth=" + String(FIREBASE_AUTH);
-  http.begin(client, url);
-  http.addHeader("Content-Type", "application/json");
-  http.POST(jsonString);
-  http.end();
-  Serial.print("📅 Monthly record uploaded: "); Serial.print(getMonthString(month1based, year));
-  Serial.print(" | ₹"); Serial.println(totalBill);
+  String path = "/monthly_records/" + String(USER_ID) + ".json";
+  if (firebasePOST(path, js)) {
+    Serial.print("📅 Monthly: "); Serial.print(getMonthString(month1based, year));
+    Serial.print(" | ₹"); Serial.println(totalBill);
+  }
 }
 
 void uploadBiMonthlyBill(int cycleStartMonth1based, int year) {
-  if (!wifiConnected) return;
-
-  HTTPClient http;
-  WiFiClientSecure client;
-  client.setInsecure();
-  client.setTimeout(8000);
+  if (WiFi.status() != WL_CONNECTED) return;
 
   float m1units    = round((month1EnergyWh / 1000.0f) * 100) / 100.0f;
   float m2units    = round((month2EnergyWh / 1000.0f) * 100) / 100.0f;
@@ -791,10 +742,10 @@ void uploadBiMonthlyBill(int cycleStartMonth1based, int year) {
            cycleEndMonth1based == 9 || cycleEndMonth1based == 11) lastDayEnd = 30;
 
   char periodFrom[12], periodTo[12], dueDate[12], genDate[12];
-  snprintf(periodFrom, sizeof(periodFrom), "%04d-%02d-01",   year,        cycleStartMonth1based);
+  snprintf(periodFrom, sizeof(periodFrom), "%04d-%02d-01",   year,         cycleStartMonth1based);
   snprintf(periodTo,   sizeof(periodTo),   "%04d-%02d-%02d", cycleEndYear, cycleEndMonth1based, lastDayEnd);
-  snprintf(dueDate,    sizeof(dueDate),    "%04d-%02d-15",   dueYear,     dueMonth);
-  snprintf(genDate,    sizeof(genDate),    "%04d-%02d-01",   dueYear,     (dueMonth - 1 > 0) ? dueMonth - 1 : 12);
+  snprintf(dueDate,    sizeof(dueDate),    "%04d-%02d-15",   dueYear,      dueMonth);
+  snprintf(genDate,    sizeof(genDate),    "%04d-%02d-01",   dueYear,      (dueMonth - 1 > 0) ? dueMonth - 1 : 12);
 
   float peakDemandKW = round((dailyPeakPower / 1000.0f) * 100) / 100.0f;
 
@@ -821,18 +772,15 @@ void uploadBiMonthlyBill(int cycleStartMonth1based, int year) {
   doc["payment_date"]      = "";
   doc["payment_method"]    = "";
 
-  String jsonString;
-  serializeJson(doc, jsonString);
+  String js;
+  serializeJson(doc, js);
 
-  String url = "https://" + String(FIREBASE_HOST) + "/monthly_bills/" + String(USER_ID)
-             + ".json?auth=" + String(FIREBASE_AUTH);
-  http.begin(client, url);
-  http.addHeader("Content-Type", "application/json");
-  http.POST(jsonString);
-  http.end();
-  Serial.println("💵 Bi-monthly bill uploaded");
-  Serial.print("   Period: "); Serial.println(getBillPeriodString(cycleStartMonth1based, year));
-  Serial.print("   Total:  ₹"); Serial.println(totalBill);
+  String path = "/monthly_bills/" + String(USER_ID) + ".json";
+  if (firebasePOST(path, js)) {
+    Serial.println("💵 Bi-monthly bill uploaded");
+    Serial.print("   Period: "); Serial.println(getBillPeriodString(cycleStartMonth1based, year));
+    Serial.print("   Total:  ₹"); Serial.println(totalBill);
+  }
 }
 
 void checkAlerts(float power, float dailyEnergy) {
@@ -852,14 +800,11 @@ void checkAlerts(float power, float dailyEnergy) {
     illegalUsageAlertSent = true;
     Serial.println("🚨 ADMIN ALERT: Possible illegal 3-phase usage!");
   }
-  if (dailyUnits < DAILY_UNIT_THRESHOLD * 0.9f)     dailyAlertSent = false;
-  if (powerKW    < ILLEGAL_3PHASE_THRESHOLD * 0.9f)  illegalUsageAlertSent = false;
+  if (dailyUnits < DAILY_UNIT_THRESHOLD * 0.9f)    dailyAlertSent = false;
+  if (powerKW    < ILLEGAL_3PHASE_THRESHOLD * 0.9f) illegalUsageAlertSent = false;
 }
 
 void sendAlert(String alertType, String message) {
-  if (!wifiConnected) return;
-  HTTPClient http; WiFiClientSecure client;
-  client.setInsecure(); client.setTimeout(5000);
   StaticJsonDocument<300> doc;
   doc["user_id"]    = USER_ID;
   doc["alert_type"] = alertType;
@@ -867,16 +812,10 @@ void sendAlert(String alertType, String message) {
   doc["timestamp"]  = getTimestamp();
   doc["status"]     = "unread";
   String js; serializeJson(doc, js);
-  String url = "https://" + String(FIREBASE_HOST) + "/user_alerts/" + String(USER_ID)
-             + ".json?auth=" + String(FIREBASE_AUTH);
-  http.begin(client, url); http.addHeader("Content-Type","application/json");
-  http.POST(js); http.end();
+  firebasePOST("/user_alerts/" + String(USER_ID) + ".json", js);
 }
 
 void sendAdminAlert(String alertType, String message) {
-  if (!wifiConnected) return;
-  HTTPClient http; WiFiClientSecure client;
-  client.setInsecure(); client.setTimeout(5000);
   StaticJsonDocument<400> doc;
   doc["user_id"]    = USER_ID;
   doc["user_name"]  = USER_NAME;
@@ -886,26 +825,7 @@ void sendAdminAlert(String alertType, String message) {
   doc["severity"]   = "HIGH";
   doc["status"]     = "pending";
   String js; serializeJson(doc, js);
-  String url = "https://" + String(FIREBASE_HOST) + "/admin_alerts.json?auth="
-             + String(FIREBASE_AUTH);
-  http.begin(client, url); http.addHeader("Content-Type","application/json");
-  http.POST(js); http.end();
-}
-
-String getTimestamp() {
-  struct tm timeinfo;
-  if (!getLocalTime(&timeinfo)) return String(millis());
-  char buffer[25];
-  strftime(buffer, sizeof(buffer), "%Y-%m-%d %H:%M:%S", &timeinfo);
-  return String(buffer);
-}
-
-String getDateOnly() {
-  struct tm timeinfo;
-  if (!getLocalTime(&timeinfo)) return String(millis());
-  char buffer[15];
-  strftime(buffer, sizeof(buffer), "%Y-%m-%d", &timeinfo);
-  return String(buffer);
+  firebasePOST("/admin_alerts.json", js);
 }
 
 void updateDailyStats(float power) {
@@ -917,34 +837,33 @@ void updateDailyStats(float power) {
 }
 
 void updateHourlyEnergy(float energyIncrement) {
-  struct tm timeinfo;
-  if (getLocalTime(&timeinfo)) {
-    int hour = timeinfo.tm_hour;
+  struct tm t;
+  if (getLocalTimeIST(&t)) {
+    int hour = t.tm_hour;
     if (hour >= 0 && hour < 24) hourlyEnergy[hour] += energyIncrement;
   }
 }
 
 // ============================================================
-// DAILY / MONTHLY RESET
+// DAILY / MONTHLY RESET (uses real IST time)
 // ============================================================
 void checkDailyReset() {
-  struct tm timeinfo;
-  if (!getLocalTime(&timeinfo)) return;
+  if (!timeInitialized) return;
 
-  // ── Day change ──────────────────────────────────────────────────────
-  if (timeinfo.tm_mday != lastDay) {
+  struct tm t;
+  if (!getLocalTimeIST(&t)) return;
+
+  if (t.tm_mday != lastDay && lastDay != -1) {
     Serial.println("\n╔════════════════════════════════════════╗");
-    Serial.println("║         📅 NEW DAY DETECTED           ║");
+    Serial.println("║    📅 NEW DAY DETECTED (IST)           ║");
     Serial.println("╚════════════════════════════════════════╝");
-    Serial.print("Previous day: "); Serial.print(dailyEnergyWh / 1000.0f); Serial.println(" kWh");
+    Serial.print("Date now: "); Serial.println(getDateOnly());
+    Serial.print("Previous day energy: "); Serial.print(dailyEnergyWh / 1000.0f); Serial.println(" kWh");
 
     String yesterday = getDateOnly();
     uploadDailySummary(yesterday);
     uploadRunningBill(yesterday, dailyEnergyWh / 1000.0f);
 
-    // ✓ FIXED: Do NOT add dailyEnergyWh to month here.
-    //   Month energy already accumulated in real-time in loop().
-    //   Only reset the daily counter.
     dailyEnergyWh     = 0.0f;
     dailyAlertSent    = false;
     dailyPeakPower    = 0.0f;
@@ -954,15 +873,15 @@ void checkDailyReset() {
     dailyPowerSum     = 0.0f;
     for (int i = 0; i < 24; i++) hourlyEnergy[i] = 0.0f;
 
-    lastDay = timeinfo.tm_mday;
+    lastDay = t.tm_mday;
     Serial.println("✓ Daily reset complete\n");
+  } else if (lastDay == -1) {
+    lastDay = t.tm_mday;
   }
 
-  // ── Month change ────────────────────────────────────────────────────
-  if (timeinfo.tm_mon != lastMonth) {
+  if (t.tm_mon != lastMonth && lastMonth != -1) {
     int prevMonth1based = lastMonth + 1;
-    int prevYear        = timeinfo.tm_year + 1900;
-    if (prevMonth1based == 0) { prevMonth1based = 12; prevYear--; }
+    int prevYear        = t.tm_year + 1900;
 
     Serial.println("\n📆 NEW MONTH DETECTED");
     Serial.print("Month ended: "); Serial.println(getMonthString(prevMonth1based, prevYear));
@@ -981,8 +900,10 @@ void checkDailyReset() {
     }
 
     cycleMonthIndex = 1 - cycleMonthIndex;
-    lastMonth       = timeinfo.tm_mon;
+    lastMonth       = t.tm_mon;
     Serial.println("✓ Monthly reset complete\n");
+  } else if (lastMonth == -1) {
+    lastMonth = t.tm_mon;
   }
 }
 
@@ -990,7 +911,6 @@ void checkDailyReset() {
 // MAIN LOOP
 // ============================================================
 void loop() {
-  // MEASURE VOLTAGE
   float Vrms = measureVoltage();
   bool currentSupplyState = checkSupplyState(Vrms);
 
@@ -1004,7 +924,6 @@ void loop() {
 
   delay(10);
 
-  // MEASURE CURRENT (only if supply is ON)
   float rawCurrent = 0.0f;
   if (currentSupplyState) {
     rawCurrent = measureCurrentRaw();
@@ -1025,13 +944,11 @@ void loop() {
     }
   }
 
-  // ── POWER FACTOR (adaptive, updates every 5s) ──────────────────────
   float powerFactor   = estimateLoadPF();
   float apparentPower = smoothVoltage * smoothCurrent;
   float realPower     = apparentPower * powerFactor;
 
-  // ENERGY
-  const float MIN_POWER_FOR_ENERGY = 20.0f;
+  const float MIN_POWER_FOR_ENERGY = 5.0f;
   powerIsValid = (realPower >= MIN_POWER_FOR_ENERGY) && currentSupplyState;
 
   unsigned long currentMillis = millis();
@@ -1041,7 +958,6 @@ void loop() {
     float energyIncrement = realPower * deltaTime;
     totalEnergyWh += energyIncrement;
     dailyEnergyWh += energyIncrement;
-    // ✓ FIXED: Accumulate month energy in real-time (NOT at midnight)
     if (cycleMonthIndex == 0) month1EnergyWh += energyIncrement;
     else                       month2EnergyWh += energyIncrement;
     updateDailyStats(realPower);
@@ -1051,45 +967,30 @@ void loop() {
   lastEnergyUpdate = currentMillis;
   checkDailyReset();
 
-  // SERIAL DISPLAY
+  // Serial monitor output
   Serial.print(getTimestamp());
-  Serial.print(" | V:");     Serial.print(smoothVoltage, 1);
-  Serial.print("V I:");      Serial.print(smoothCurrent, 3);
-  Serial.print("A VA:");     Serial.print(apparentPower, 1);
-  Serial.print(" PF:");      Serial.print(powerFactor, 2);
-  Serial.print(" P:");       Serial.print(realPower, 1);
-  Serial.print("W | Daily:"); Serial.print(dailyEnergyWh / 1000.0f, 3);
-  Serial.print("kWh M1:");   Serial.print(month1EnergyWh / 1000.0f, 3);
-  Serial.print("kWh M2:");   Serial.print(month2EnergyWh / 1000.0f, 3);
+  Serial.print(" | V:");      Serial.print(smoothVoltage, 1);
+  Serial.print("V I:");       Serial.print(smoothCurrent, 3);
+  Serial.print("A P:");       Serial.print(realPower, 1);
+  Serial.print("W PF:");      Serial.print(powerFactor, 2);
+  Serial.print(" | Day:");    Serial.print(dailyEnergyWh / 1000.0f, 4);
   Serial.print("kWh Bill:₹"); Serial.print(runningBillRupees, 2);
-
-  if (wifiConnected) Serial.print(" 📶");
 
   if (!currentSupplyState) {
     Serial.print(" [SUPPLY OFF]");
+  } else if (smoothCurrent > 0.05f) {
+    Serial.print(" [");
+    if      (smoothCurrent < 0.5f) Serial.print("TINY");
+    else if (smoothCurrent < 2.0f) Serial.print("MEDIUM");
+    else                           Serial.print("LARGE");
+    Serial.print(powerIsValid ? " ✓]" : " ✗]");
   } else {
-    if (rawCurrent > NOISE_FLOOR && smoothCurrent == 0.0f) {
-      Serial.print(" [FILTERED raw:"); Serial.print(rawCurrent, 3);
-      Serial.print(" confirm:");       Serial.print(consecutiveHighReadings);
-      Serial.print("/");               Serial.print(CONFIRMATION_SAMPLES);
-      Serial.print("]");
-    }
-    if (smoothCurrent > 0.05f) {
-      Serial.print(" [");
-      if      (smoothCurrent < 0.5f) Serial.print("TINY");
-      else if (smoothCurrent < 2.0f) Serial.print("MEDIUM");
-      else                           Serial.print("LARGE");
-      Serial.print(" LOAD");
-      Serial.print(powerIsValid ? " ✓COUNTING" : " ✗NOT COUNTING");
-      Serial.print("]");
-    } else {
-      Serial.print(" [IDLE]");
-    }
+    Serial.print(" [IDLE]");
   }
   Serial.println();
 
-  // CLOUD UPLOAD every 30s
-  if (wifiConnected && (currentMillis - lastUploadTime >= uploadInterval)) {
+  // Upload every 10 seconds
+  if (currentMillis - lastUploadTime >= uploadInterval) {
     uploadToFirebase(smoothVoltage, smoothCurrent, realPower,
                      totalEnergyWh, dailyEnergyWh);
     lastUploadTime = currentMillis;
